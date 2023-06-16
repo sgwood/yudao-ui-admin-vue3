@@ -2,7 +2,7 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "prettier.enable": true,
   "editor.formatOnType": true,
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "editor.formatOnPaste": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
@@ -50,5 +50,7 @@
     "CHANGELOG.md": "CHANGELOG*",
     "package.json": "pnpm-lock.yaml,pnpm-workspace.yaml,LICENSE,.gitattributes,.gitignore,.gitpod.yml,CNAME,README*,.npmrc,.browserslistrc,vite.config.*,windi.*,tailwind.*,tsconfig.*,postcss*",
     ".eslintrc.js": ".eslintignore,.eslintrc-*,.prettierignore,.stylelintignore,.commitlintrc.js,.prettierrc.js,.stylelint*,stylelint*,prettier.*,.editorconfig"
-  }
+  },
+  "editor.tabSize": 2,
+  "editor.indentSize": "tabSize"
 }
