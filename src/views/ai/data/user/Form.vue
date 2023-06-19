@@ -40,7 +40,7 @@
     </template>
   </Dialog>
 </template>
-<script lang="ts" name="InfraConfigForm" setup>
+<script lang="ts" name="Form" setup>
 import { DICT_TYPE, getBoolDictOptions } from '@/utils/dict'
 import * as ConfigApi from '@/api/infra/config'
 
