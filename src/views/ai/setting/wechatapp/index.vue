@@ -9,9 +9,9 @@
           <el-input v-model="formData.appSecret" placeholder="请输入微信开放平台appSecret" />
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="submitForm">确 定</el-button>
     </div>
   </ContentWrap>
+  <el-button type="primary" @click="submitForm" class="mt-10px ml-150px">确 定</el-button>
 </template>
 <script setup lang="ts" name="WechatApp">
 // import * as ConfigApi from '@/api/infra/config'
