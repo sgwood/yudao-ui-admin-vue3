@@ -14,9 +14,16 @@ const crudSchemas = reactive<CrudSchema[]>([
     isForm: false
   },
   {
+    label: '关键词',
+    field: 'keyword',
+    isSearch: true,
+    isForm: false,
+    isTable: false
+  },
+  {
     label: '标题',
     field: 'name',
-    isSearch: true
+    isSearch: false
   },
   {
     label: '排序',
@@ -34,7 +41,7 @@ const crudSchemas = reactive<CrudSchema[]>([
     field: 'status',
     dictType: DICT_TYPE.COMMON_STATUS,
     dictClass: 'number',
-    isSearch: true,
+    isSearch: false,
     form: {
       component: 'SelectV2'
     }
