@@ -1,221 +1,259 @@
 <template>
-  <doc-alert title="配置中心" url="https://doc.iocoder.cn/config-center/" />
-
-  <!-- 搜索 -->
-  <ContentWrap>
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="参数名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入参数名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="参数键名" prop="key">
-        <el-input
-          v-model="queryParams.key"
-          placeholder="请输入参数键名"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="系统内置" prop="type">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="请选择系统内置"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_CONFIG_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['infra:config:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['infra:config:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="参数主键" align="center" prop="id" />
-      <el-table-column label="参数分类" align="center" prop="category" />
-      <el-table-column label="参数名称" align="center" prop="name" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键名" align="center" prop="key" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键值" align="center" prop="value" />
-      <el-table-column label="是否可见" align="center" prop="visible">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.visible" />
-        </template>
-      </el-table-column>
-      <el-table-column label="系统内置" align="center" prop="type">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_CONFIG_TYPE" :value="scope.row.type" />
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['infra:config:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['infra:config:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
-    />
-  </ContentWrap>
+  <el-scrollbar height="calc(100vh - 88px - 40px - 50px)">
+    <el-row>
+      <!-- 今日数据 -->
+      <el-col :span="12" class="card-box" shadow="hover">
+        <el-card>
+          <el-descriptions title="今日数据" :column="2">
+            <el-descriptions-item label="今日充值">
+              {{ cache?.info?.redis_version }}
+            </el-descriptions-item>
+            <el-descriptions-item label="今日新增用户">
+              {{ cache?.info?.redis_mode == 'standalone' ? '单机' : '集群' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="今天作图">
+              {{ cache?.info?.tcp_port }}
+            </el-descriptions-item>
+            <el-descriptions-item label="今日提问">
+              {{ cache?.info?.connected_clients }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
+      <el-col :span="12" class="card-box">
+        <el-card class="ml-3">
+          <el-descriptions title="总数据" :column="2">
+            <el-descriptions-item label="累计充值">
+              {{ cache?.info?.redis_version }}
+            </el-descriptions-item>
+            <el-descriptions-item label="累计用户">
+              {{ cache?.info?.redis_mode == 'standalone' ? '单机' : '集群' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="累计作图">
+              {{ cache?.info?.tcp_port }}
+            </el-descriptions-item>
+            <el-descriptions-item label="累计提问">
+              {{ cache?.info?.connected_clients }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
+      <!-- 近7天数据统计 -->
+      <el-col :span="12" class="mt-3">
+        <el-card :gutter="12" shadow="hover">
+          <Echart :options="commandStatsRefChika" :height="420" />
+        </el-card>
+      </el-col>
+      <!-- 内存使用量统计 -->
+      <el-col :span="12" class="mt-3">
+        <el-card class="ml-3" :gutter="12" shadow="hover">
+          <Echart :options="usedmemoryEchartChika" :height="420" />
+        </el-card>
+      </el-col>
+    </el-row>
+  </el-scrollbar>
 </template>
-<script setup lang="ts" name="InfraConfig">
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
-import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
-import * as ConfigApi from '@/api/infra/config'
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+<script setup lang="ts">
+import * as RedisApi from '@/api/infra/redis'
+import { RedisMonitorInfoVO } from '@/api/infra/redis/types'
+const cache = ref<RedisMonitorInfoVO>()
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  key: undefined,
-  type: undefined,
-  createTime: []
+// 基本信息
+const readRedisInfo = async () => {
+  const data = await RedisApi.getCache()
+  cache.value = data
+}
+
+// 内存使用情况
+const usedmemoryEchartChika = reactive<any>({
+  title: {
+    // 仪表盘标题。
+    text: '内存使用情况',
+    left: 'center',
+    show: true, // 是否显示标题,默认 true。
+    offsetCenter: [0, '20%'], //相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比。
+    color: 'yellow', // 文字的颜色,默认 #333。
+    fontSize: 20 // 文字的字体大小,默认 15。
+  },
+  toolbox: {
+    show: false,
+    feature: {
+      restore: { show: true },
+      saveAsImage: { show: true }
+    }
+  },
+  series: [
+    {
+      name: '峰值',
+      type: 'gauge',
+      min: 0,
+      max: 50,
+      splitNumber: 10,
+      //这是指针的颜色
+      color: '#F5C74E',
+      radius: '85%',
+      center: ['50%', '50%'],
+      startAngle: 225,
+      endAngle: -45,
+      axisLine: {
+        // 坐标轴线
+        lineStyle: {
+          // 属性lineStyle控制线条样式
+          color: [
+            [0.2, '#7FFF00'],
+            [0.8, '#00FFFF'],
+            [1, '#FF0000']
+          ],
+          //width: 6 外框的大小（环的宽度）
+          width: 10
+        }
+      },
+      axisTick: {
+        // 坐标轴小标记
+        //里面的线长是5（短线）
+        length: 5, // 属性length控制线长
+        lineStyle: {
+          // 属性lineStyle控制线条样式
+          color: '#76D9D7'
+        }
+      },
+      splitLine: {
+        // 分隔线
+        length: 20, // 属性length控制线长
+        lineStyle: {
+          // 属性lineStyle（详见lineStyle）控制线条样式
+          color: '#76D9D7'
+        }
+      },
+      axisLabel: {
+        color: '#76D9D7',
+        distance: 15,
+        fontSize: 15
+      },
+      pointer: {
+        // 指针的大小
+        width: 7,
+        show: true
+      },
+      detail: {
+        textStyle: {
+          fontWeight: 'normal',
+          // 里面文字下的数值大小（50）
+          fontSize: 15,
+          color: '#FFFFFF'
+        },
+        valueAnimation: true
+      },
+      progress: {
+        show: true
+      }
+    }
+  ]
 })
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
+// 指令使用情况
+const commandStatsRefChika = reactive({
+  title: {
+    text: '近7天数据统计',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{a} <br/>{b} : {c} ({d}%)'
+  },
+  legend: {
+    type: 'scroll',
+    orient: 'vertical',
+    right: 30,
+    top: 10,
+    bottom: 20,
+    data: [] as any[],
+    textStyle: {
+      color: '#a1a1a1'
+    }
+  },
+  series: [
+    {
+      name: '命令',
+      type: 'pie',
+      radius: [20, 120],
+      center: ['40%', '60%'],
+      data: [] as any[],
+      roseType: 'radius',
+      label: {
+        show: true
+      },
+      emphasis: {
+        label: {
+          show: true
+        },
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }
+  ]
+})
+
+/** 加载数据 */
+const getSummary = () => {
+  // 初始化命令图表
+  initCommandStatsChart()
+  usedMemoryInstance()
+}
+
+/** 命令使用情况 */
+const initCommandStatsChart = async () => {
+  usedmemoryEchartChika.series[0].data = []
+  // 发起请求
   try {
-    const data = await ConfigApi.getConfigPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await ConfigApi.deleteConfig(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    const data = await RedisApi.getCache()
+    cache.value = data
+    // 处理数据
+    const commandStats = [] as any[]
+    const nameList = [] as string[]
+    data.commandStats.forEach((row) => {
+      commandStats.push({
+        name: row.command,
+        value: row.calls
+      })
+      nameList.push(row.command)
+    })
+    commandStatsRefChika.legend.data = nameList
+    commandStatsRefChika.series[0].data = commandStats
   } catch {}
 }
-
-/** 导出按钮操作 */
-const handleExport = async () => {
+const usedMemoryInstance = async () => {
   try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ConfigApi.exportConfig(queryParams)
-    download.excel(data, '参数配置.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+    const data = await RedisApi.getCache()
+    cache.value = data
+    // 仪表盘详情，用于显示数据。
+    usedmemoryEchartChika.series[0].detail = {
+      show: true, // 是否显示详情,默认 true。
+      offsetCenter: [0, '50%'], // 相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比。
+      color: 'auto', // 文字的颜色,默认 auto。
+      fontSize: 30, // 文字的字体大小,默认 15。
+      formatter: cache.value!.info.used_memory_human // 格式化函数或者字符串
+    }
+
+    usedmemoryEchartChika.series[0].data[0] = {
+      value: cache.value!.info.used_memory_human,
+      name: '内存消耗'
+    }
+    console.log(cache.value!.info)
+    usedmemoryEchartChika.tooltip = {
+      formatter: '{b} <br/>{a} : ' + cache.value!.info.used_memory_human
+    }
+  } catch {}
 }
 
 /** 初始化 **/
 onMounted(() => {
-  getList()
+  // 读取 redis 信息
+  readRedisInfo()
+  // 加载数据
+  getSummary()
 })
 </script>

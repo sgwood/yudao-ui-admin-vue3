@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="配置中心" url="https://doc.iocoder.cn/config-center/" />
-
   <!-- 搜索 -->
   <ContentWrap>
     <el-form
@@ -10,31 +8,8 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="参数名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入参数名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="参数键名" prop="key">
-        <el-input
-          v-model="queryParams.key"
-          placeholder="请输入参数键名"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="系统内置" prop="type">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="请选择系统内置"
-          clearable
-          class="!w-240px"
-        >
+      <el-form-item label="提现状态" prop="type">
+        <el-select v-model="queryParams.type" placeholder="请选择" clearable class="!w-240px">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_CONFIG_TYPE)"
             :key="dict.value"
@@ -43,6 +18,16 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="关键词" prop="name">
+        <el-input
+          v-model="queryParams.name"
+          placeholder="请输入参数名称"
+          clearable
+          @keyup.enter="handleQuery"
+          class="!w-240px"
+        />
+      </el-form-item>
+
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
@@ -55,25 +40,7 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['infra:config:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['infra:config:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 查询</el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -81,24 +48,24 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="参数主键" align="center" prop="id" />
-      <el-table-column label="参数分类" align="center" prop="category" />
-      <el-table-column label="参数名称" align="center" prop="name" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键名" align="center" prop="key" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键值" align="center" prop="value" />
-      <el-table-column label="是否可见" align="center" prop="visible">
+      <el-table-column label="id" align="center" prop="id" />
+      <el-table-column label="头像" align="center" prop="category" />
+      <el-table-column label="昵称" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column
+        label="提现金额（元）"
+        align="center"
+        prop="key"
+        :show-overflow-tooltip="true"
+      />
+      <el-table-column label="提现类型" align="center" prop="value" />
+      <el-table-column label="提现状态" align="center" prop="visible">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.visible" />
         </template>
       </el-table-column>
-      <el-table-column label="系统内置" align="center" prop="type">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_CONFIG_TYPE" :value="scope.row.type" />
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
+      <el-table-column label="驳回原因" align="left" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column
-        label="创建时间"
+        label="时间"
         align="center"
         prop="createTime"
         width="180"
@@ -140,7 +107,6 @@
 <script setup lang="ts" name="AiQa">
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as ConfigApi from '@/api/infra/config'
 import ConfigForm from './ConfigForm.vue'
 const message = useMessage() // 消息弹窗
@@ -158,7 +124,6 @@ const queryParams = reactive({
   createTime: []
 })
 const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
 const getList = async () => {
@@ -178,12 +143,6 @@ const handleQuery = () => {
   getList()
 }
 
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
 /** 添加/修改操作 */
 const formRef = ref()
 const openForm = (type: string, id?: number) => {
@@ -201,21 +160,6 @@ const handleDelete = async (id: number) => {
     // 刷新列表
     await getList()
   } catch {}
-}
-
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ConfigApi.exportConfig(queryParams)
-    download.excel(data, '参数配置.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
 }
 
 /** 初始化 **/
