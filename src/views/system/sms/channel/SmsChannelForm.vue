@@ -109,7 +109,7 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
-    const data = unref(formRef)?.formModel as SmsChannelApi.SmsChannelVO
+    const data = formData.value as unknown as SmsChannelApi.SmsChannelVO
     if (formType.value === 'create') {
       await SmsChannelApi.createSmsChannel(data)
       message.success(t('common.createSuccess'))
