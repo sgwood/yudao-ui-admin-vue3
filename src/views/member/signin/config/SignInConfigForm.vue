@@ -1,30 +1,20 @@
 <template>
-  <Dialog :title="dialogTitle" v-model="dialogVisible" style="width: 600px">
+  <Dialog :title="dialogTitle" v-model="dialogVisible">
     <el-form
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="120px"
+      label-width="100px"
       v-loading="formLoading"
     >
-      <el-form-item label="积分抵扣" prop="tradeDeductEnable">
-        <el-select v-model="formData.tradeDeductEnable" placeholder="请选择是否开启">
-          <el-option
-            v-for="dict in options"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+      <el-form-item label="签到天数" prop="day">
+        <el-input-number v-model="formData.day" :min="1" :max="7" :precision="0" />
+        <el-text class="mx-1" style="margin-left: 10px" type="danger">
+          只允许设置1-7，默认签到7天为一个周期</el-text
+        >
       </el-form-item>
-      <el-form-item label="抵扣单位(元)" prop="tradeDeductUnitPrice">
-        <el-input v-model="formData.tradeDeductUnitPrice" placeholder="请输入抵扣单位(元)" />
-      </el-form-item>
-      <el-form-item label="积分抵扣最大值" prop="tradeDeductMaxPrice">
-        <el-input v-model="formData.tradeDeductMaxPrice" placeholder="请输入积分抵扣最大值" />
-      </el-form-item>
-      <el-form-item label="1元赠送多少分" prop="tradeGivePoint">
-        <el-input v-model="formData.tradeGivePoint" placeholder="请输入1元赠送多少分" />
+      <el-form-item label="签到分数" prop="point">
+        <el-input-number v-model="formData.point" :precision="0" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -33,8 +23,8 @@
     </template>
   </Dialog>
 </template>
-<script setup lang="ts">
-import * as ConfigApi from '@/api/point/config'
+<script lang="ts" setup>
+import * as SignInConfigApi from '@/api/point/signInConfig'
 
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
@@ -45,24 +35,11 @@ const formLoading = ref(false) // 表单的加载中：1）修改时的数据加
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
 const formData = ref({
   id: undefined,
-  tradeDeductEnable: undefined,
-  tradeDeductUnitPrice: undefined,
-  tradeDeductMaxPrice: undefined,
-  tradeGivePoint: undefined
+  day: undefined,
+  point: undefined
 })
 const formRules = reactive({})
 const formRef = ref() // 表单 Ref
-
-const options = [
-  {
-    value: '1',
-    label: '是'
-  },
-  {
-    value: '0',
-    label: '否'
-  }
-]
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
@@ -74,7 +51,7 @@ const open = async (type: string, id?: number) => {
   if (id) {
     formLoading.value = true
     try {
-      formData.value = await ConfigApi.getConfig(id)
+      formData.value = await SignInConfigApi.getSignInConfig(id)
     } finally {
       formLoading.value = false
     }
@@ -92,12 +69,12 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
-    const data = formData.value as unknown as ConfigApi.ConfigVO
+    const data = formData.value as unknown as SignInConfigApi.SignInConfigVO
     if (formType.value === 'create') {
-      await ConfigApi.createConfig(data)
+      await SignInConfigApi.createSignInConfig(data)
       message.success(t('common.createSuccess'))
     } else {
-      await ConfigApi.updateConfig(data)
+      await SignInConfigApi.updateSignInConfig(data)
       message.success(t('common.updateSuccess'))
     }
     dialogVisible.value = false
@@ -112,10 +89,8 @@ const submitForm = async () => {
 const resetForm = () => {
   formData.value = {
     id: undefined,
-    tradeDeductEnable: undefined,
-    tradeDeductUnitPrice: undefined,
-    tradeDeductMaxPrice: undefined,
-    tradeGivePoint: undefined
+    day: undefined,
+    point: undefined
   }
   formRef.value?.resetFields()
 }

@@ -1,6 +1,9 @@
-<script lang="ts" name="Dialog" setup>
+<script lang="ts" setup>
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
+
+// eslint-disable-next-line vue/no-reserved-component-names
+defineOptions({ name: 'Dialog' })
 
 const slots = useSlots()
 
@@ -14,7 +17,7 @@ const props = defineProps({
 })
 
 const getBindValue = computed(() => {
-  const delArr: string[] = ['fullscreen', 'title', 'maxHeight']
+  const delArr: string[] = ['fullscreen', 'title', 'maxHeight', 'appendToBody']
   const attrs = useAttrs()
   const obj = { ...attrs, ...props }
   for (const key in obj) {

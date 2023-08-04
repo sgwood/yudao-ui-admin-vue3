@@ -8,25 +8,25 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="是否开启" prop="tradeDeductEnable">
-        <el-select
-          v-model="queryParams.tradeDeductEnable"
-          placeholder="请选择是否开启"
+      <!-- TODO @xiaqing：搜索可以去掉，因为一共就没几条配置哈 -->
+      <el-form-item label="签到天数" prop="day">
+        <el-input
+          v-model="queryParams.day"
+          placeholder="请输入签到天数"
           clearable
+          @keyup.enter="handleQuery"
           class="!w-240px"
-        >
-          <el-option
-            v-for="dict in options"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item>
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button type="primary" @click="openForm('create')" v-hasPermi="['point:config:create']">
+        <el-button
+          type="primary"
+          plain
+          @click="openForm('create')"
+          v-hasPermi="['point:sign-in-config:create']"
+        >
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
         <el-button
@@ -34,8 +34,9 @@
           plain
           @click="handleExport"
           :loading="exportLoading"
-          v-hasPermi="['point:config:export']"
+          v-hasPermi="['point:sign-in-config:export']"
         >
+          <!-- TODO @xiaqing：四个功能的导出都可以去掉 -->
           <Icon icon="ep:download" class="mr-5px" /> 导出
         </el-button>
       </el-form-item>
@@ -45,35 +46,17 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="序号" align="center" prop="id" />
-      <el-table-column
-        label="积分抵扣(是否开启)"
-        align="center"
-        prop="tradeDeductEnable"
-        :formatter="tradeDeductFormat"
-      />
-      <el-table-column label="抵扣单位(元)" align="center" prop="tradeDeductUnitPrice" />
-      <el-table-column label="积分抵扣最大值" align="center" prop="tradeDeductMaxPrice" />
-      <el-table-column label="1元赠送多少分" align="center" prop="tradeGivePoint" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-      />
-      <el-table-column
-        label="变更时间"
-        align="center"
-        prop="updateTime"
-        :formatter="dateFormatter"
-      />
+      <!-- TODO @xiaqing：展示优化下，改成第 1 天、第 2 天这种 -->
+      <el-table-column label="签到天数" align="center" prop="day" />
+      <el-table-column label="获得积分" align="center" prop="point" />
+      <!-- TODO @xiaqing：展示一个是否开启 -->
       <el-table-column label="操作" align="center">
         <template #default="scope">
           <el-button
             link
             type="primary"
             @click="openForm('update', scope.row.id)"
-            v-hasPermi="['point:config:update']"
+            v-hasPermi="['point:sign-in-config:update']"
           >
             编辑
           </el-button>
@@ -81,7 +64,7 @@
             link
             type="danger"
             @click="handleDelete(scope.row.id)"
-            v-hasPermi="['point:config:delete']"
+            v-hasPermi="['point:sign-in-config:delete']"
           >
             删除
           </el-button>
@@ -98,14 +81,16 @@
   </ContentWrap>
 
   <!-- 表单弹窗：添加/修改 -->
-  <ConfigForm ref="formRef" @success="getList" />
+  <SignInConfigForm ref="formRef" @success="getList" />
 </template>
 
-<script setup lang="ts" name="PointConfig">
-import { dateFormatter } from '@/utils/formatTime'
+<script lang="ts" setup>
 import download from '@/utils/download'
-import * as ConfigApi from '@/api/point/config'
-import ConfigForm from './ConfigForm.vue'
+import * as SignInConfigApi from '@/api/point/signInConfig'
+import SignInConfigForm from './SignInConfigForm.vue'
+
+defineOptions({ name: 'SignInConfig' })
+
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
@@ -115,30 +100,17 @@ const list = ref([]) // 列表的数据
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  tradeDeductEnable: null
+  day: null
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
 
-const options = [
-  {
-    value: '1',
-    label: '是'
-  },
-  {
-    value: '0',
-    label: '否'
-  }
-]
-
-const tradeDeductFormat = (row, column, cellValue) => {
-  return cellValue === 1 ? '是' : '否'
-}
+// TODO @xiaqing：可以不分页；
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
   try {
-    const data = await ConfigApi.getConfigPage(queryParams)
+    const data = await SignInConfigApi.getSignInConfigPage(queryParams)
     list.value = data.list
     total.value = data.total
   } finally {
@@ -170,7 +142,7 @@ const handleDelete = async (id: number) => {
     // 删除的二次确认
     await message.delConfirm()
     // 发起删除
-    await ConfigApi.deleteConfig(id)
+    await SignInConfigApi.deleteSignInConfig(id)
     message.success(t('common.delSuccess'))
     // 刷新列表
     await getList()
@@ -184,8 +156,8 @@ const handleExport = async () => {
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
-    const data = await ConfigApi.exportConfig(queryParams)
-    download.excel(data, '积分设置.xls')
+    const data = await SignInConfigApi.exportSignInConfig(queryParams)
+    download.excel(data, '积分签到规则.xls')
   } catch {
   } finally {
     exportLoading.value = false

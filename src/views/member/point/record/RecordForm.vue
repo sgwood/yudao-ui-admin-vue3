@@ -13,7 +13,7 @@
       <el-form-item label="业务类型" prop="bizType">
         <el-select v-model="formData.bizType" placeholder="请选择业务类型">
           <el-option
-            v-for="dict in getStrDictOptions(DICT_TYPE.POINT_BIZ_TYPE)"
+            v-for="dict in getStrDictOptions(DICT_TYPE.MEMBER_POINT_BIZ_TYPE)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -41,7 +41,7 @@
       <el-form-item label="积分状态" prop="status">
         <el-select v-model="formData.status" placeholder="积分状态">
           <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.POINT_STATUS)"
+            v-for="dict in getIntDictOptions(DICT_TYPE.MEMBER_POINT_STATUS)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -82,7 +82,7 @@
     </template>
   </Dialog>
 </template>
-<script setup lang="ts">
+<script lang="ts" setup>
 import { DICT_TYPE, getStrDictOptions, getIntDictOptions } from '@/utils/dict'
 import * as RecordApi from '@/api/point/record'
 
@@ -157,6 +157,7 @@ const submitForm = async () => {
   }
 }
 
+// TODO @xiaqing：不需要更新操作哇？
 /** 重置表单 */
 const resetForm = () => {
   formData.value = {

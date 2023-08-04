@@ -16,8 +16,8 @@
   </ContentWrap>
 
   <!-- 弹窗：表单预览 -->
-  <Dialog :title="dialogTitle" v-model="dialogVisible" max-height="600">
-    <div ref="editor" v-if="dialogVisible">
+  <Dialog v-model="dialogVisible" :title="dialogTitle" max-height="600">
+    <div v-if="dialogVisible" ref="editor">
       <el-button style="float: right" @click="copy(formData)">
         {{ t('common.copy') }}
       </el-button>
@@ -29,7 +29,8 @@
     </div>
   </Dialog>
 </template>
-<script setup lang="ts" name="InfraBuild">
+<script lang="ts" setup>
+defineOptions({ name: 'InfraBuild' })
 import FcDesigner from '@form-create/designer'
 import { useClipboard } from '@vueuse/core'
 import { isString } from '@/utils/is'
@@ -38,6 +39,7 @@ import hljs from 'highlight.js' // 导入代码高亮文件
 import 'highlight.js/styles/github.css' // 导入代码高亮样式
 import xml from 'highlight.js/lib/languages/java'
 import json from 'highlight.js/lib/languages/json'
+import formCreate from '@form-create/element-ui'
 
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息

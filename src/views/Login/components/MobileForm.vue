@@ -92,7 +92,7 @@
     </el-row>
   </el-form>
 </template>
-<script lang="ts" name="MobileForm" setup>
+<script lang="ts" setup>
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 import { useIcon } from '@/hooks/web/useIcon'
@@ -102,6 +102,8 @@ import { usePermissionStore } from '@/store/modules/permission'
 import { getTenantIdByName, sendSmsCode, smsLogin } from '@/api/login'
 import LoginFormTitle from './LoginFormTitle.vue'
 import { LoginStateEnum, useFormValid, useLoginState } from './useLogin'
+
+defineOptions({ name: 'MobileForm' })
 
 const { t } = useI18n()
 const message = useMessage()
@@ -183,12 +185,17 @@ const signIn = async () => {
   await getTenantId()
   const data = await validForm()
   if (!data) return
+  ElLoading.service({
+    lock: true,
+    text: '正在加载系统中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
   loginLoading.value = true
   smsVO.loginSms.mobile = loginData.loginForm.mobileNumber
   smsVO.loginSms.code = loginData.loginForm.code
   await smsLogin(smsVO.loginSms)
     .then(async (res) => {
-      setToken(res?.token)
+      setToken(res)
       if (!redirect.value) {
         redirect.value = '/'
       }
@@ -197,6 +204,10 @@ const signIn = async () => {
     .catch(() => {})
     .finally(() => {
       loginLoading.value = false
+      setTimeout(() => {
+        const loadingInstance = ElLoading.service()
+        loadingInstance.close()
+      }, 400)
     })
 }
 </script>
