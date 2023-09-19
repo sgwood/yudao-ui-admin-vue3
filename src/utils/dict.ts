@@ -90,6 +90,7 @@ export enum DICT_TYPE {
   USER_TYPE = 'user_type',
   COMMON_STATUS = 'common_status',
   SYSTEM_TENANT_PACKAGE_ID = 'system_tenant_package_id',
+  TERMINAL = 'terminal', // 终端
 
   // ========== SYSTEM 模块 ==========
   SYSTEM_USER_SEX = 'system_user_sex',
@@ -130,16 +131,11 @@ export enum DICT_TYPE {
   BPM_OA_LEAVE_TYPE = 'bpm_oa_leave_type',
 
   // ========== PAY 模块 ==========
-  PAY_CHANNEL_WECHAT_VERSION = 'pay_channel_wechat_version', // 微信渠道版本
-  PAY_CHANNEL_ALIPAY_SIGN_TYPE = 'pay_channel_alipay_sign_type', // 支付渠道支付宝算法类型
-  PAY_CHANNEL_ALIPAY_MODE = 'pay_channel_alipay_mode', // 支付宝公钥类型
-  PAY_CHANNEL_ALIPAY_SERVER_TYPE = 'pay_channel_alipay_server_type', // 支付宝网关地址
-  PAY_CHANNEL_CODE_TYPE = 'pay_channel_code_type', // 支付渠道编码类型
-  PAY_ORDER_NOTIFY_STATUS = 'pay_order_notify_status', // 商户支付订单回调状态
+  PAY_CHANNEL_CODE = 'pay_channel_code_type', // 支付渠道编码类型
   PAY_ORDER_STATUS = 'pay_order_status', // 商户支付订单状态
-  PAY_ORDER_REFUND_STATUS = 'pay_order_refund_status', // 商户支付订单退款状态
-  PAY_REFUND_ORDER_STATUS = 'pay_refund_order_status', // 退款订单状态
-  PAY_REFUND_ORDER_TYPE = 'pay_refund_order_type', // 退款订单类别
+  PAY_REFUND_STATUS = 'pay_refund_status', // 退款订单状态
+  PAY_NOTIFY_STATUS = 'pay_notify_status', // 商户支付回调状态
+  PAY_NOTIFY_TYPE = 'pay_notify_type', // 商户支付回调状态
 
   // ========== MP 模块 ==========
   MP_AUTO_REPLY_REQUEST_MATCH = 'mp_auto_reply_request_match', // 自动回复请求匹配类型
@@ -147,7 +143,6 @@ export enum DICT_TYPE {
 
   // ========== MALL - 会员模块 ==========
   MEMBER_POINT_BIZ_TYPE = 'member_point_biz_type', // 积分的业务类型
-  MEMBER_POINT_STATUS = 'member_point_status', // 积分的状态
 
   // ========== MALL - 商品模块 ==========
   PRODUCT_UNIT = 'product_unit', // 商品单位
@@ -161,7 +156,7 @@ export enum DICT_TYPE {
   TRADE_ORDER_TYPE = 'trade_order_type', // 订单 - 类型
   TRADE_ORDER_STATUS = 'trade_order_status', // 订单 - 状态
   TRADE_ORDER_ITEM_AFTER_SALE_STATUS = 'trade_order_item_after_sale_status', // 订单项 - 售后状态
-  TERMINAL = 'terminal', // 终端
+  TRADE_DELIVERY_TYPE = 'trade_delivery_type', // 配送方式
 
   // ========== MALL - 营销模块 ==========
   PROMOTION_DISCOUNT_TYPE = 'promotion_discount_type', // 优惠类型

@@ -8,9 +8,9 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="签到用户" prop="userId">
+      <el-form-item label="签到用户" prop="nickname">
         <el-input
-          v-model="queryParams.userId"
+          v-model="queryParams.nickname"
           placeholder="请输入签到用户"
           clearable
           @keyup.enter="handleQuery"
@@ -40,15 +40,6 @@
       <el-form-item>
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['point:sign-in-record:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -57,28 +48,27 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
       <el-table-column label="编号" align="center" prop="id" />
-      <!-- TODO @xiaqing：展示用户昵称  -->
-      <el-table-column label="签到用户" align="center" prop="userId" />
-      <el-table-column label="签到天数" align="center" prop="day" />
-      <el-table-column label="获得积分" align="center" prop="point" />
+      <el-table-column label="签到用户" align="center" prop="nickname" />
+      <el-table-column
+        label="签到天数"
+        align="center"
+        prop="day"
+        :formatter="(_, __, cellValue) => ['第', cellValue, '天'].join(' ')"
+      />
+      <el-table-column label="获得积分" align="center" prop="point" width="100">
+        <template #default="scope">
+          <el-tag v-if="scope.row.point > 0" class="ml-2" type="success" effect="dark">
+            +{{ scope.row.point }}
+          </el-tag>
+          <el-tag v-else class="ml-2" type="danger" effect="dark"> {{ scope.row.point }} </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column
         label="签到时间"
         align="center"
         prop="createTime"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['point:sign-in-record:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
     </el-table>
     <!-- 分页 -->
     <Pagination
@@ -88,21 +78,15 @@
       @pagination="getList"
     />
   </ContentWrap>
-
-  <!-- 表单弹窗：添加/修改 -->
-  <SignInRecordForm ref="formRef" @success="getList" />
 </template>
 
 <script lang="ts" setup>
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
-import * as SignInRecordApi from '@/api/point/signInRecord'
-import SignInRecordForm from './SignInRecordForm.vue'
+import * as SignInRecordApi from '@/api/member/signin/record'
 
 defineOptions({ name: 'SignInRecord' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
 
 const loading = ref(true) // 列表的加载中
 const total = ref(0) // 列表的总页数
@@ -110,7 +94,7 @@ const list = ref([]) // 列表的数据
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  userId: null,
+  nickname: null,
   day: null,
   createTime: []
 })
@@ -139,40 +123,6 @@ const handleQuery = () => {
 const resetQuery = () => {
   queryFormRef.value.resetFields()
   handleQuery()
-}
-
-/** 添加/修改操作 */
-// const formRef = ref()
-// const openForm = (type: string, id?: number) => {
-//   formRef.value.open(type, id)
-// }
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await SignInRecordApi.deleteSignInRecord(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await SignInRecordApi.exportSignInRecord(queryParams)
-    download.excel(data, '用户签到积分.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
 }
 
 /** 初始化 **/
