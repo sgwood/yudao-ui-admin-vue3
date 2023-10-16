@@ -80,7 +80,7 @@
       <el-table-column align="center" label="一级返佣(元)" min-width="168">
         <template #default="{ row }">
           <el-input-number
-            v-model="row.firstBrokerageRecord"
+            v-model="row.subCommissionFirstPrice"
             :min="0"
             :precision="2"
             :step="0.1"
@@ -91,7 +91,7 @@
       <el-table-column align="center" label="二级返佣(元)" min-width="168">
         <template #default="{ row }">
           <el-input-number
-            v-model="row.secondBrokerageRecord"
+            v-model="row.subCommissionSecondPrice"
             :min="0"
             :precision="2"
             :step="0.1"
@@ -124,7 +124,7 @@
     <el-table-column v-if="isComponent" type="selection" width="45" />
     <el-table-column align="center" label="图片" min-width="80">
       <template #default="{ row }">
-        <el-image :src="row.picUrl" class="h-60px w-60px" @click="imagePreview(row.picUrl)" />
+        <el-image :src="row.picUrl" class="w-60px h-60px" @click="imagePreview(row.picUrl)" />
       </template>
     </el-table-column>
     <template v-if="formData!.specType && !isBatch">
@@ -181,12 +181,12 @@
     <template v-if="formData!.subCommissionType">
       <el-table-column align="center" label="一级返佣(元)" min-width="80">
         <template #default="{ row }">
-          {{ row.firstBrokerageRecord }}
+          {{ row.subCommissionFirstPrice }}
         </template>
       </el-table-column>
       <el-table-column align="center" label="二级返佣(元)" min-width="80">
         <template #default="{ row }">
-          {{ row.secondBrokerageRecord }}
+          {{ row.subCommissionSecondPrice }}
         </template>
       </el-table-column>
     </template>
@@ -204,7 +204,7 @@
     <el-table-column v-if="isComponent" type="selection" width="45" />
     <el-table-column align="center" label="图片" min-width="80">
       <template #default="{ row }">
-        <el-image :src="row.picUrl" class="h-60px w-60px" @click="imagePreview(row.picUrl)" />
+        <el-image :src="row.picUrl" class="w-60px h-60px" @click="imagePreview(row.picUrl)" />
       </template>
     </el-table-column>
     <template v-if="formData!.specType">
@@ -295,8 +295,8 @@ const skuList = ref<Sku[]>([
     stock: 0, // 库存
     weight: 0, // 商品重量
     volume: 0, // 商品体积
-    firstBrokerageRecord: 0, // 一级分销的佣金
-    secondBrokerageRecord: 0 // 二级分销的佣金
+    subCommissionFirstPrice: 0, // 一级分销的佣金
+    subCommissionSecondPrice: 0 // 二级分销的佣金
   }
 ]) // 批量添加时的临时数据
 
@@ -415,8 +415,8 @@ const generateTableData = (propertyList: any[]) => {
       stock: 0,
       weight: 0,
       volume: 0,
-      firstBrokerageRecord: 0,
-      secondBrokerageRecord: 0
+      subCommissionFirstPrice: 0,
+      subCommissionSecondPrice: 0
     }
     // 如果存在属性相同的 sku 则不做处理
     const index = formData.value!.skus!.findIndex(
@@ -491,8 +491,8 @@ watch(
           stock: 0,
           weight: 0,
           volume: 0,
-          firstBrokerageRecord: 0,
-          secondBrokerageRecord: 0
+          subCommissionFirstPrice: 0,
+          subCommissionSecondPrice: 0
         }
       ]
     }

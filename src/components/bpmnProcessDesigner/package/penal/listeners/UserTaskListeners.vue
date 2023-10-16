@@ -184,8 +184,8 @@
         :data="fieldsListOfListener"
         size="small"
         max-height="240"
-        fit
         border
+        fit
         style="flex: none"
       >
         <el-table-column label="序号" width="50px" type="index" />

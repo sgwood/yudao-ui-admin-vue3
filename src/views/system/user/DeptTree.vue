@@ -51,11 +51,6 @@ const handleNodeClick = async (row: { [key: string]: any }) => {
 }
 const emits = defineEmits(['node-click'])
 
-/** 监听deptName */
-watch(deptName, (val) => {
-  treeRef.value!.filter(val)
-})
-
 /** 初始化 */
 onMounted(async () => {
   await getTree()

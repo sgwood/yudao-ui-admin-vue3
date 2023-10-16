@@ -20,7 +20,7 @@
                   :duration="2600"
                   :end-val="102400"
                   :start-val="0"
-                  class="text-right text-20px font-700"
+                  class="text-20px font-700 text-right"
                 />
               </div>
             </div>
@@ -49,7 +49,7 @@
                   :duration="2600"
                   :end-val="81212"
                   :start-val="0"
-                  class="text-right text-20px font-700"
+                  class="text-20px font-700 text-right"
                 />
               </div>
             </div>
@@ -78,7 +78,7 @@
                   :duration="2600"
                   :end-val="9280"
                   :start-val="0"
-                  class="text-right text-20px font-700"
+                  class="text-20px font-700 text-right"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@
                   :duration="2600"
                   :end-val="13600"
                   :start-val="0"
-                  class="text-right text-20px font-700"
+                  class="text-20px font-700 text-right"
                 />
               </div>
             </div>

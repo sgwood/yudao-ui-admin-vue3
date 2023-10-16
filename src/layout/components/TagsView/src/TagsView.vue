@@ -263,11 +263,11 @@ watch(
   <div
     :id="prefixCls"
     :class="prefixCls"
-    class="relative w-full flex bg-[#fff] dark:bg-[var(--el-bg-color)]"
+    class="flex w-full relative bg-[#fff] dark:bg-[var(--el-bg-color)]"
   >
     <span
       :class="`${prefixCls}__tool ${prefixCls}__tool--first`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] flex items-center justify-center cursor-pointer"
       @click="move(-200)"
     >
       <Icon
@@ -276,9 +276,9 @@ watch(
         :hover-color="isDark ? '#fff' : 'var(--el-color-black)'"
       />
     </span>
-    <div class="flex-1 overflow-hidden">
+    <div class="overflow-hidden flex-1">
       <ElScrollbar ref="scrollbarRef" class="h-full" @scroll="scroll">
-        <div class="h-full flex">
+        <div class="flex h-full">
           <ContextMenu
             :ref="itemRefs.set"
             :schema="[
@@ -354,7 +354,7 @@ watch(
               <router-link :ref="tagLinksRefs.set" :to="{ ...item }" custom v-slot="{ navigate }">
                 <div
                   @click="navigate"
-                  class="h-full flex items-center justify-center whitespace-nowrap pl-15px"
+                  class="h-full flex justify-center items-center whitespace-nowrap pl-15px"
                 >
                   <Icon
                     v-if="
@@ -384,7 +384,7 @@ watch(
     </div>
     <span
       :class="`${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] flex items-center justify-center cursor-pointer"
       @click="move(200)"
     >
       <Icon
@@ -395,7 +395,7 @@ watch(
     </span>
     <span
       :class="`${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] flex items-center justify-center cursor-pointer"
       @click="refreshSelectedTag(selectedTag)"
     >
       <Icon
@@ -460,7 +460,7 @@ watch(
     >
       <span
         :class="`${prefixCls}__tool`"
-        class="block h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+        class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] flex items-center justify-center cursor-pointer block"
       >
         <Icon
           icon="ep:menu"

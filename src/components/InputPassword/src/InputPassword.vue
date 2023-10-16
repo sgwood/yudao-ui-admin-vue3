@@ -67,7 +67,7 @@ const getIconName = computed(() => (unref(textType) === 'password' ? 'ep:hide' :
     <div
       v-if="strength"
       :class="`${prefixCls}__bar`"
-      class="relative mb-6px ml-auto mr-auto mt-10px h-6px"
+      class="relative h-6px mt-10px mb-6px mr-auto ml-auto"
     >
       <div :class="`${prefixCls}__bar--fill`" :data-score="getPasswordStrength"></div>
     </div>

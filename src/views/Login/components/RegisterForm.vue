@@ -29,7 +29,7 @@
           @click="loginRegister()"
         />
       </div>
-      <div class="mt-15px w-[100%]">
+      <div class="w-[100%] mt-15px">
         <XButton :title="t('login.hasUser')" class="w-[100%]" @click="handleBackLogin()" />
       </div>
     </template>

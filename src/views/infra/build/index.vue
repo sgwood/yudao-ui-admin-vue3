@@ -2,7 +2,7 @@
   <ContentWrap>
     <el-row>
       <el-col>
-        <div class="float-right mb-2">
+        <div class="mb-2 float-right">
           <el-button size="small" type="primary" @click="showJson">生成 JSON</el-button>
           <el-button size="small" type="success" @click="showOption">生成 Options</el-button>
           <el-button size="small" type="danger" @click="showTemplate">生成组件</el-button>

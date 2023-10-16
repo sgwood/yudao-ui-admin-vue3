@@ -66,27 +66,28 @@ const dialogStyle = computed(() => {
     destroy-on-close
     lock-scroll
     draggable
+    top="0"
     class="com-dialog"
     :show-close="false"
   >
     <template #header="{ close }">
-      <div class="relative h-54px flex items-center justify-between pl-15px pr-15px">
+      <div class="flex justify-between items-center h-54px pl-15px pr-15px relative">
         <slot name="title">
           {{ title }}
         </slot>
         <div
-          class="absolute right-15px top-[50%] h-54px flex translate-y-[-50%] items-center justify-between"
+          class="h-54px flex justify-between items-center absolute top-[50%] right-15px translate-y-[-50%]"
         >
           <Icon
             v-if="fullscreen"
-            class="is-hover mr-10px cursor-pointer"
+            class="cursor-pointer is-hover mr-10px"
             :icon="isFullscreen ? 'radix-icons:exit-full-screen' : 'radix-icons:enter-full-screen'"
             color="var(--el-color-info)"
             hover-color="var(--el-color-primary)"
             @click="toggleFull"
           />
           <Icon
-            class="is-hover cursor-pointer"
+            class="cursor-pointer is-hover"
             icon="ep:close"
             hover-color="var(--el-color-primary)"
             color="var(--el-color-info)"

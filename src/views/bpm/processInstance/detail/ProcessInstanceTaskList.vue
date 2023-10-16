@@ -69,9 +69,6 @@ const getTimelineItemIcon = (item) => {
   if (item.result === 4) {
     return 'el-icon-remove-outline'
   }
-  if (item.result === 5) {
-    return 'el-icon-back'
-  }
   return ''
 }
 
@@ -88,9 +85,6 @@ const getTimelineItemType = (item) => {
   }
   if (item.result === 4) {
     return 'info'
-  }
-  if (item.result === 5) {
-    return 'warning'
   }
   return ''
 }

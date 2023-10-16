@@ -267,7 +267,7 @@ onMounted(async () => {
 </script>
 <style>
 .order-font {
-  padding: 2px 0;
   font-size: 12px;
+  padding: 2px 0;
 }
 </style>

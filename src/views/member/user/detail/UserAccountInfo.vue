@@ -54,7 +54,6 @@ const { user } = defineProps<{ user: UserApi.UserVO }>()
 .cell-item {
   display: inline;
 }
-
 .cell-item::after {
   content: ':';
 }

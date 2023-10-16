@@ -40,17 +40,12 @@
       <el-descriptions-item label="订单状态: ">
         <dict-tag :type="DICT_TYPE.TRADE_ORDER_STATUS" :value="formData.status!" />
       </el-descriptions-item>
+      <!-- TODO @puhui999：根据状态，进行展示按钮 -->
       <el-descriptions-item label-class-name="no-colon">
-        <el-button v-if="formData.status! === 0" type="primary" @click="updatePrice">
-          调整价格
-        </el-button>
-        <el-button type="primary" @click="remark">备注</el-button>
-        <el-button v-if="formData.status! === 10" type="primary" @click="delivery">
-          发货
-        </el-button>
-        <el-button v-if="formData.status! === 10" type="primary" @click="updateAddress">
-          修改地址
-        </el-button>
+        <el-button type="primary" @click="openForm('updatePrice')">调整价格</el-button>
+        <el-button type="primary" @click="openForm('remark')">备注</el-button>
+        <el-button type="primary" @click="openForm('delivery')">发货</el-button>
+        <el-button type="primary" @click="openForm('updateAddress')">修改地址</el-button>
       </el-descriptions-item>
       <el-descriptions-item>
         <template #label><span style="color: red">提醒: </span></template>
@@ -157,22 +152,11 @@
       <el-descriptions-item labelClassName="no-colon">
         <el-timeline>
           <el-timeline-item
-            v-for="(log, index) in formData.logs"
+            v-for="(log, index) in formData.orderLog"
             :key="index"
             :timestamp="formatDate(log.createTime!)"
-            placement="top"
           >
-            <div class="el-timeline-right-content">
-              {{ log.content }}
-            </div>
-            <template #dot>
-              <span
-                :style="{ backgroundColor: getUserTypeColor(log.userType!) }"
-                class="dot-node-style"
-              >
-                {{ getDictLabel(DICT_TYPE.USER_TYPE, log.userType)[0] }}
-              </span>
-            </template>
+            {{ log.content }}
           </el-timeline-item>
         </el-timeline>
       </el-descriptions-item>
@@ -189,55 +173,42 @@
 import * as TradeOrderApi from '@/api/mall/trade/order'
 import { floatToFixed2 } from '@/utils'
 import { formatDate } from '@/utils/formatTime'
-import { DICT_TYPE, getDictLabel, getDictObj } from '@/utils/dict'
+import { DICT_TYPE } from '@/utils/dict'
 import OrderUpdateRemarkForm from '@/views/mall/trade/order/form/OrderUpdateRemarkForm.vue'
 import OrderDeliveryForm from '@/views/mall/trade/order/form/OrderDeliveryForm.vue'
 import OrderUpdateAddressForm from '@/views/mall/trade/order/form/OrderUpdateAddressForm.vue'
 import OrderUpdatePriceForm from '@/views/mall/trade/order/form/OrderUpdatePriceForm.vue'
 import * as DeliveryExpressApi from '@/api/mall/trade/delivery/express'
-import { useTagsViewStore } from '@/store/modules/tagsView'
 
 defineOptions({ name: 'TradeOrderDetail' })
 
 const message = useMessage() // 消息弹窗
 
-/** 获得 userType 颜色 */
-const getUserTypeColor = (type: number) => {
-  const dict = getDictObj(DICT_TYPE.USER_TYPE, type)
-  switch (dict?.colorType) {
-    case 'success':
-      return '#67C23A'
-    case 'info':
-      return '#909399'
-    case 'warning':
-      return '#E6A23C'
-    case 'danger':
-      return '#F56C6C'
-  }
-  return '#409EFF'
-}
-
 // 订单详情
 const formData = ref<TradeOrderApi.OrderVO>({
-  logs: []
+  orderLog: [] // TODO @puhui999：orderLogs
 })
 
-/** 各种操作 */
-const updateRemarkForm = ref() // 订单备注表单 Ref
-const remark = () => {
-  updateRemarkForm.value?.open(formData.value)
-}
+// TODO @puhui999：这个最好也拆掉哈
 const deliveryFormRef = ref() // 发货表单 Ref
-const delivery = () => {
-  deliveryFormRef.value?.open(formData.value)
-}
+const updateRemarkForm = ref() // 订单备注表单 Ref
 const updateAddressFormRef = ref() // 收货地址表单 Ref
-const updateAddress = () => {
-  updateAddressFormRef.value?.open(formData.value)
-}
 const updatePriceFormRef = ref() // 订单调价表单 Ref
-const updatePrice = () => {
-  updatePriceFormRef.value?.open(formData.value)
+const openForm = (type: string) => {
+  switch (type) {
+    case 'remark':
+      updateRemarkForm.value?.open(formData.value)
+      break
+    case 'delivery':
+      deliveryFormRef.value?.open(formData.value)
+      break
+    case 'updateAddress':
+      updateAddressFormRef.value?.open(formData.value)
+      break
+    case 'updatePrice':
+      updatePriceFormRef.value?.open(formData.value)
+      break
+  }
 }
 
 /** 获得详情 */
@@ -246,21 +217,8 @@ const getDetail = async () => {
   const id = params.orderId as unknown as number
   if (id) {
     const res = (await TradeOrderApi.getOrder(id)) as TradeOrderApi.OrderVO
-    // 没有表单信息则关闭页面返回
-    if (res === null) {
-      message.error('交易订单不存在')
-      close()
-    }
     formData.value = res
   }
-}
-
-/** 关闭 tag */
-const { delView } = useTagsViewStore() // 视图操作
-const { push, currentRoute } = useRouter() // 路由
-const close = () => {
-  delView(unref(currentRoute))
-  push({ name: 'TradeOrder' })
 }
 
 /** 复制 */
@@ -307,53 +265,6 @@ onMounted(async () => {
         content: '';
       }
     }
-  }
-}
-
-// 时间线样式调整
-:deep(.el-timeline) {
-  margin: 10px 0px 0px 160px;
-
-  .el-timeline-item__wrapper {
-    position: relative;
-    top: -20px;
-
-    .el-timeline-item__timestamp {
-      position: absolute !important;
-      top: 10px;
-      left: -150px;
-    }
-  }
-
-  .el-timeline-right-content {
-    display: flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 10px;
-    background-color: #f7f8fa;
-
-    &::before {
-      content: ''; /* 必须设置 content 属性 */
-      position: absolute;
-      top: 10px;
-      left: 13px; /* 将伪元素水平居中 */
-      border-width: 8px; /* 调整尖角大小 */
-      border-style: solid;
-      border-color: transparent #f7f8fa transparent transparent; /* 尖角颜色，左侧朝向 */
-    }
-  }
-
-  .dot-node-style {
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    left: -5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    color: #fff;
-    font-size: 10px;
   }
 }
 </style>
