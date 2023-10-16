@@ -36,12 +36,16 @@
           <el-tab-pane label="签到" name="sign" lazy>
             <UserSignList :user-id="id" />
           </el-tab-pane>
-          <el-tab-pane label="成长值" name="third">成长值(WIP)</el-tab-pane>
+          <el-tab-pane label="成长值" name="experience" lazy>
+            <UserExperienceRecordList :user-id="id"
+          /></el-tab-pane>
           <el-tab-pane label="余额" name="fourth">余额(WIP)</el-tab-pane>
           <el-tab-pane label="收货地址" name="address" lazy>
             <UserAddressList :user-id="id" />
           </el-tab-pane>
-          <el-tab-pane label="订单管理" name="fourth">订单管理(WIP)</el-tab-pane>
+          <el-tab-pane label="订单管理" name="order" lazy>
+            <UserOrderList :user-id="id" />
+          </el-tab-pane>
           <el-tab-pane label="售后管理" name="fourth">售后管理(WIP)</el-tab-pane>
           <el-tab-pane label="收藏记录" name="fourth">收藏记录(WIP)</el-tab-pane>
           <el-tab-pane label="优惠劵" name="fourth">优惠劵(WIP)</el-tab-pane>
@@ -62,13 +66,16 @@ import UserAccountInfo from './UserAccountInfo.vue'
 import UserAddressList from './UserAddressList.vue'
 import UserPointList from './UserPointList.vue'
 import UserSignList from './UserSignList.vue'
+import UserExperienceRecordList from './UserExperienceRecordList.vue'
 import { CardTitle } from '@/components/Card/index'
+import UserOrderList from '@/views/member/user/detail/UserOrderList.vue'
+import { ElMessage } from 'element-plus'
 
 defineOptions({ name: 'MemberDetail' })
 
 const activeName = ref('point') // 账户明细 选中的 tabs
 const loading = ref(true) // 加载中
-let user = ref<UserApi.UserVO>({})
+const user = ref<UserApi.UserVO>({})
 
 /** 添加/修改操作 */
 const formRef = ref()
@@ -104,10 +111,12 @@ onMounted(() => {
 .detail-info-item:first-child {
   padding-left: 0 !important;
 }
+
 /* first-child 不生效有没有大佬给看下q.q */
 .detail-info-item:nth-child(2) {
   padding-right: 0 !important;
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;

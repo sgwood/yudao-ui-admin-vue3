@@ -100,17 +100,24 @@
           />
         </el-select>
       </el-form-item>
-      <!-- TODO 聚合搜索等售后结束后实现-->
+      <!-- TODO puhui 聚合搜索等售后结束后实现-->
+      <!-- TODO puhui999：尽量不要用 .k 这样的参数，完整拼写，有完整的业务含义 -->
       <el-form-item label="聚合搜索">
         <el-input
           v-show="true"
-          v-model="queryType.v"
+          v-model="queryParams[queryType.k]"
           class="!w-280px"
           clearable
           placeholder="请输入"
         >
           <template #prepend>
-            <el-select v-model="queryType.k" class="!w-110px" clearable placeholder="全部">
+            <el-select
+              v-model="queryType.k"
+              class="!w-110px"
+              clearable
+              placeholder="全部"
+              @change="inputChangeSelect"
+            >
               <el-option
                 v-for="dict in searchList"
                 :key="dict.value"
@@ -139,7 +146,7 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column class-name="order-table-col">
         <template #header>
-          <!-- TODO @phui999：小屏幕下，会有偏移，后续看看 -->
+          <!-- TODO @puhui999：小屏幕下，会有偏移，后续看看 -->
           <div class="flex items-center" style="width: 100%">
             <div class="ml-100px mr-200px">商品信息</div>
             <div class="mr-60px">单价(元)/数量</div>
@@ -192,7 +199,7 @@
                 <div class="flex items-center">
                   <el-image
                     :src="row.picUrl"
-                    class="w-30px h-30px mr-10px"
+                    class="mr-10px h-30px w-30px"
                     @click="imagePreview(row.picUrl)"
                   />
                   <span class="mr-10px">{{ row.spuName }}</span>
@@ -267,7 +274,7 @@
               <template #default>
                 <!-- TODO 权限后续补齐 -->
                 <div class="flex justify-center items-center">
-                  <el-button link type="primary" @click="openForm(scope.row.id)">
+                  <el-button link type="primary" @click="openDetail(scope.row.id)">
                     <Icon icon="ep:notification" />
                     详情
                   </el-button>
@@ -335,41 +342,42 @@ const total = ref(2) // 列表的总页数
 const list = ref<TradeOrderApi.OrderVO[]>([]) // 列表的数据
 const queryFormRef = ref<FormInstance>() // 搜索的表单
 // 表单搜索
-const queryParams = reactive({
-  pageNo: 1, //首页
-  pageSize: 10, //页面大小
-  no: '',
-  userId: '',
-  userNickname: '',
-  userMobile: '',
-  receiverName: '',
-  receiverMobile: '',
-
-  terminal: '',
-  type: null,
-  status: null,
-  payChannelCode: '',
-  createTime: [],
-  deliveryType: null,
-  spuName: '',
-  itemCount: '',
-  pickUpStoreId: [],
-  logisticsId: null,
-  all: ''
+const queryParams = ref({
+  pageNo: 1, // 页数
+  pageSize: 10, // 每页显示数量
+  status: null, // 订单状态
+  payChannelCode: null, // 支付方式
+  createTime: null, // 创建时间
+  terminal: null, // 订单来源
+  type: null, // 订单类型
+  deliveryType: null, // 配送方式
+  logisticsId: null, // 快递公司
+  pickUpStoreId: null // 自提门店
 })
-const queryType = reactive({ k: '', v: '' }) // 订单搜索类型kv
-/**
- * 订单聚合搜索
- * 商品名称、商品件数、全部
- *
- * 需要后端支持 TODO
- */
+const queryType = reactive({ k: '' }) // 订单搜索类型 k
+
+// 订单聚合搜索 select 类型配置
+// TODO @puhui999：dynamicSearchList，动态搜索；其它相关的变量和方法，都可以朝着这个变量靠哈；这样更容易理解；
 const searchList = ref([
   { value: 'no', label: '订单号' },
   { value: 'userId', label: '用户UID' },
   { value: 'userNickname', label: '用户昵称' },
   { value: 'userMobile', label: '用户电话' }
 ])
+/**
+ * 聚合搜索切换查询对象时触发
+ * @param val
+ */
+const inputChangeSelect = (val: string) => {
+  searchList.value
+    .filter((item) => item.value !== val)
+    ?.forEach((item1) => {
+      // 清除集合搜索无用属性
+      if (queryParams.value.hasOwnProperty(item1.value)) {
+        delete queryParams.value[item1.value]
+      }
+    })
+}
 
 const headerStyle = ({ row, columnIndex }: any) => {
   // 表头第一行第一列占 8
@@ -417,7 +425,7 @@ const spanMethod = ({ row, rowIndex, columnIndex }: SpanMethodProps) => {
 const getList = async () => {
   loading.value = true
   try {
-    const data = await TradeOrderApi.getOrderPage(queryParams)
+    const data = await TradeOrderApi.getOrderPage(unref(queryParams))
     list.value = data.list
     total.value = data.total
   } finally {
@@ -427,13 +435,25 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = async () => {
-  queryParams.pageNo = 1
+  queryParams.value.pageNo = 1
   await getList()
 }
 
 /** 重置按钮操作 */
 const resetQuery = () => {
   queryFormRef.value?.resetFields()
+  queryParams.value = {
+    pageNo: 1, // 页数
+    pageSize: 10, // 每页显示数量
+    status: null, // 订单状态
+    payChannelCode: null, // 支付方式
+    createTime: null, // 创建时间
+    terminal: null, // 订单来源
+    type: null, // 订单类型
+    deliveryType: null, // 配送方式
+    logisticsId: null, // 快递公司
+    pickUpStoreId: null // 自提门店
+  }
   handleQuery()
 }
 
@@ -445,7 +465,7 @@ const imagePreview = (imgUrl: string) => {
 }
 
 /** 查看订单详情 */
-const openForm = (id: number) => {
+const openDetail = (id: number) => {
   push({ name: 'TradeOrderDetail', params: { orderId: id } })
 }
 

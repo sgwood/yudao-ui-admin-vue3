@@ -18,7 +18,7 @@
     <el-table-column key="id" align="center" label="商品编号" prop="id" />
     <el-table-column label="商品图" min-width="80">
       <template #default="{ row }">
-        <el-image :src="row.picUrl" class="w-30px h-30px" @click="imagePreview(row.picUrl)" />
+        <el-image :src="row.picUrl" class="h-30px w-30px" @click="imagePreview(row.picUrl)" />
       </template>
     </el-table-column>
     <el-table-column :show-overflow-tooltip="true" label="商品名称" min-width="300" prop="name" />
@@ -41,7 +41,7 @@ import { SpuProperty } from '@/views/mall/promotion/components/index'
 defineOptions({ name: 'PromotionSpuAndSkuList' })
 
 const props = defineProps<{
-  spuList: T[] // TODO 为了方便兼容后续可能有需要展示多个 spu 的情况暂时保持，如果后续都是只操作一个 spu 的话则可更改为接受一个 spu 或保持
+  spuList: T[]
   ruleConfig: RuleConfig[]
   spuPropertyListP: SpuProperty<T>[]
 }>()

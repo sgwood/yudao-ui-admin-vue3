@@ -91,6 +91,8 @@
 
     <!-- 弹窗：转派审批人 -->
     <TaskUpdateAssigneeForm ref="taskUpdateAssigneeFormRef" @success="getDetail" />
+    <!-- 弹窗，回退节点 -->
+    <TaskReturnDialog ref="taskReturnDialogRef" @success="getDetail" />
   </ContentWrap>
 </template>
 <script lang="ts" setup>
@@ -103,6 +105,7 @@ import * as TaskApi from '@/api/bpm/task'
 import TaskUpdateAssigneeForm from './TaskUpdateAssigneeForm.vue'
 import ProcessInstanceBpmnViewer from './ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceTaskList from './ProcessInstanceTaskList.vue'
+import TaskReturnDialog from './TaskReturnDialogForm.vue'
 import { registerComponent } from '@/utils/routerHelper'
 
 defineOptions({ name: 'BpmProcessInstanceDetail' })
@@ -172,10 +175,11 @@ const handleDelegate = async (task) => {
   console.log(task)
 }
 
+//回退弹框组件
+const taskReturnDialogRef = ref()
 /** 处理审批退回的操作 */
 const handleBack = async (task) => {
-  message.error('暂不支持【退回】功能！')
-  console.log(task)
+  taskReturnDialogRef.value.open(task.id)
 }
 
 /** 获得详情 */
