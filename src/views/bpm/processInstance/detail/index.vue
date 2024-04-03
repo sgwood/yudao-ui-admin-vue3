@@ -21,15 +21,38 @@
             {{ processInstance.name }}
           </el-form-item>
           <el-form-item v-if="processInstance && processInstance.startUser" label="流程发起人">
-            {{ processInstance.startUser.nickname }}
-            <el-tag size="small" type="info">{{ processInstance.startUser.deptName }}</el-tag>
+            {{ processInstance?.startUser.nickname }}
+            <el-tag size="small" type="info">{{ processInstance?.startUser.deptName }}</el-tag>
           </el-form-item>
+          <el-card class="mb-15px !-mt-10px" v-if="runningTasks[index].formId > 0">
+            <template #header>
+              <span class="el-icon-picture-outline">
+                填写表单【{{ runningTasks[index]?.formName }}】
+              </span>
+            </template>
+            <form-create
+              v-model:api="approveFormFApis[index]"
+              v-model="approveForms[index].value"
+              :option="approveForms[index].option"
+              :rule="approveForms[index].rule"
+            />
+          </el-card>
           <el-form-item label="审批建议" prop="reason">
             <el-input
               v-model="auditForms[index].reason"
               placeholder="请输入审批建议"
               type="textarea"
             />
+          </el-form-item>
+          <el-form-item label="抄送人" prop="copyUserIds">
+            <el-select v-model="auditForms[index].copyUserIds" multiple placeholder="请选择抄送人">
+              <el-option
+                v-for="item in userOptions"
+                :key="item.id"
+                :label="item.nickname"
+                :value="item.id"
+              />
+            </el-select>
           </el-form-item>
         </el-form>
         <div style="margin-bottom: 20px; margin-left: 10%; font-size: 14px">
@@ -48,6 +71,10 @@
           <el-button type="primary" @click="handleDelegate(item)">
             <Icon icon="ep:position" />
             委派
+          </el-button>
+          <el-button type="primary" @click="handleSign(item)">
+            <Icon icon="ep:plus" />
+            加签
           </el-button>
           <el-button type="warning" @click="handleBack(item)">
             <Icon icon="ep:back" />
@@ -78,19 +105,30 @@
     </el-card>
 
     <!-- 审批记录 -->
-    <ProcessInstanceTaskList :loading="tasksLoad" :tasks="tasks" />
+    <ProcessInstanceTaskList
+      :loading="tasksLoad"
+      :process-instance="processInstance"
+      :tasks="tasks"
+      @refresh="getTaskList"
+    />
 
     <!-- 高亮流程图 -->
     <ProcessInstanceBpmnViewer
       :id="`${id}`"
-      :bpmn-xml="bpmnXML"
+      :bpmn-xml="bpmnXml"
       :loading="processInstanceLoading"
       :process-instance="processInstance"
       :tasks="tasks"
     />
 
     <!-- 弹窗：转派审批人 -->
-    <TaskUpdateAssigneeForm ref="taskUpdateAssigneeFormRef" @success="getDetail" />
+    <TaskTransferForm ref="taskTransferFormRef" @success="getDetail" />
+    <!-- 弹窗：回退节点 -->
+    <TaskReturnForm ref="taskReturnFormRef" @success="getDetail" />
+    <!-- 弹窗：委派，将任务委派给别人处理，处理完成后，会重新回到原审批人手中-->
+    <TaskDelegateForm ref="taskDelegateForm" @success="getDetail" />
+    <!-- 弹窗：加签，当前任务审批人为A，向前加签选了一个C，则需要C先审批，然后再是A审批，向后加签B，A审批完，需要B再审批完，才算完成这个任务节点 -->
+    <TaskSignCreateForm ref="taskSignCreateFormRef" @success="getDetail" />
   </ContentWrap>
 </template>
 <script lang="ts" setup>
@@ -100,10 +138,15 @@ import type { ApiAttrs } from '@form-create/element-ui/types/config'
 import * as DefinitionApi from '@/api/bpm/definition'
 import * as ProcessInstanceApi from '@/api/bpm/processInstance'
 import * as TaskApi from '@/api/bpm/task'
-import TaskUpdateAssigneeForm from './TaskUpdateAssigneeForm.vue'
 import ProcessInstanceBpmnViewer from './ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceTaskList from './ProcessInstanceTaskList.vue'
+import TaskReturnForm from './dialog/TaskReturnForm.vue'
+import TaskDelegateForm from './dialog/TaskDelegateForm.vue'
+import TaskTransferForm from './dialog/TaskTransferForm.vue'
+import TaskSignCreateForm from './dialog/TaskSignCreateForm.vue'
 import { registerComponent } from '@/utils/routerHelper'
+import { isEmpty } from '@/utils/is'
+import * as UserApi from '@/api/system/user'
 
 defineOptions({ name: 'BpmProcessInstanceDetail' })
 
@@ -112,10 +155,10 @@ const message = useMessage() // 消息弹窗
 const { proxy } = getCurrentInstance() as any
 
 const userId = useUserStore().getUser.id // 当前登录的编号
-const id = query.id as unknown as number // 流程实例的编号
+const id = query.id as unknown as string // 流程实例的编号
 const processInstanceLoading = ref(false) // 流程实例的加载中
 const processInstance = ref<any>({}) // 流程实例
-const bpmnXML = ref('') // BPMN XML
+const bpmnXml = ref('') // BPMN XML
 const tasksLoad = ref(true) // 任务的加载中
 const tasks = ref<any[]>([]) // 任务列表
 // ========== 审批信息 ==========
@@ -124,14 +167,30 @@ const auditForms = ref<any[]>([]) // 审批任务的表单
 const auditRule = reactive({
   reason: [{ required: true, message: '审批建议不能为空', trigger: 'blur' }]
 })
+const approveForms = ref<any[]>([]) // 审批通过时，额外的补充信息
+const approveFormFApis = ref<ApiAttrs[]>([]) // approveForms 的 fAPi
+
 // ========== 申请信息 ==========
 const fApi = ref<ApiAttrs>() //
 const detailForm = ref({
-  // 流程表单详情
   rule: [],
   option: {},
   value: {}
-})
+}) // 流程实例的表单详情
+
+/** 监听 approveFormFApis，实现它对应的 form-create 初始化后，隐藏掉对应的表单提交按钮 */
+watch(
+  () => approveFormFApis.value,
+  (value) => {
+    value?.forEach((api) => {
+      api.btn.show(false)
+      api.resetBtn.show(false)
+    })
+  },
+  {
+    deep: true
+  }
+)
 
 /** 处理审批通过和不通过的操作 */
 const handleAudit = async (task, pass) => {
@@ -147,9 +206,16 @@ const handleAudit = async (task, pass) => {
   // 2.1 提交审批
   const data = {
     id: task.id,
-    reason: auditForms.value[index].reason
+    reason: auditForms.value[index].reason,
+    copyUserIds: auditForms.value[index].copyUserIds
   }
   if (pass) {
+    // 审批通过，并且有额外的 approveForm 表单，需要校验 + 拼接到 data 表单里提交
+    const formCreateApi = approveFormFApis.value[index]
+    if (formCreateApi) {
+      await formCreateApi.validate()
+      data.variables = approveForms.value[index].value
+    }
     await TaskApi.approveTask(data)
     message.success('审批通过成功')
   } else {
@@ -161,21 +227,27 @@ const handleAudit = async (task, pass) => {
 }
 
 /** 转派审批人 */
-const taskUpdateAssigneeFormRef = ref()
+const taskTransferFormRef = ref()
 const openTaskUpdateAssigneeForm = (id: string) => {
-  taskUpdateAssigneeFormRef.value.open(id)
+  taskTransferFormRef.value.open(id)
 }
 
 /** 处理审批退回的操作 */
+const taskDelegateForm = ref()
 const handleDelegate = async (task) => {
-  message.error('暂不支持【委派】功能，可以使用【转派】替代！')
-  console.log(task)
+  taskDelegateForm.value.open(task.id)
 }
 
 /** 处理审批退回的操作 */
-const handleBack = async (task) => {
-  message.error('暂不支持【退回】功能！')
-  console.log(task)
+const taskReturnFormRef = ref()
+const handleBack = async (task: any) => {
+  taskReturnFormRef.value.open(task.id)
+}
+
+/** 处理审批加签的操作 */
+const taskSignCreateFormRef = ref()
+const handleSign = async (task: any) => {
+  taskSignCreateFormRef.value.open(task.id)
 }
 
 /** 获得详情 */
@@ -213,11 +285,14 @@ const getProcessInstance = async () => {
         fApi.value?.fapi?.disabled(true)
       })
     } else {
+      // 注意：data.processDefinition.formCustomViewPath 是组件的全路径，例如说：/crm/contract/detail/index.vue
       BusinessFormComponent.value = registerComponent(data.processDefinition.formCustomViewPath)
     }
 
     // 加载流程图
-    bpmnXML.value = await DefinitionApi.getProcessDefinitionBpmnXML(processDefinition.id as number)
+    bpmnXml.value = (
+      await DefinitionApi.getProcessDefinition(processDefinition.id as number)
+    )?.bpmnXml
   } finally {
     processInstanceLoading.value = false
   }
@@ -225,6 +300,10 @@ const getProcessInstance = async () => {
 
 /** 加载任务列表 */
 const getTaskList = async () => {
+  runningTasks.value = []
+  auditForms.value = []
+  approveForms.value = []
+  approveFormFApis.value = []
   try {
     // 获得未取消的任务
     tasksLoad.value = true
@@ -232,7 +311,7 @@ const getTaskList = async () => {
     tasks.value = []
     // 1.1 移除已取消的审批
     data.forEach((task) => {
-      if (task.result !== 4) {
+      if (task.status !== 4) {
         tasks.value.push(task)
       }
     })
@@ -252,30 +331,51 @@ const getTaskList = async () => {
     })
 
     // 获得需要自己审批的任务
-    runningTasks.value = []
-    auditForms.value = []
-    tasks.value.forEach((task) => {
-      // 2.1 只有待处理才需要
-      if (task.result !== 1) {
-        return
-      }
-      // 2.2 自己不是处理人
-      if (!task.assigneeUser || task.assigneeUser.id !== userId) {
-        return
-      }
-      // 2.3 添加到处理任务
-      runningTasks.value.push({ ...task })
-      auditForms.value.push({
-        reason: ''
-      })
-    })
+    loadRunningTask(tasks.value)
   } finally {
     tasksLoad.value = false
   }
 }
 
+/**
+ * 设置 runningTasks 中的任务
+ */
+const loadRunningTask = (tasks) => {
+  tasks.forEach((task) => {
+    if (!isEmpty(task.children)) {
+      loadRunningTask(task.children)
+    }
+    // 2.1 只有待处理才需要
+    if (task.status !== 1 && task.status !== 6) {
+      return
+    }
+    // 2.2 自己不是处理人
+    if (!task.assigneeUser || task.assigneeUser.id !== userId) {
+      return
+    }
+    // 2.3 添加到处理任务
+    runningTasks.value.push({ ...task })
+    auditForms.value.push({
+      reason: '',
+      copyUserIds: []
+    })
+
+    // 2.4 处理 approve 表单
+    if (task.formId && task.formConf) {
+      const approveForm = {}
+      setConfAndFields2(approveForm, task.formConf, task.formFields, task.formVariable)
+      approveForms.value.push(approveForm)
+    } else {
+      approveForms.value.push({}) // 占位，避免为空
+    }
+  })
+}
+
 /** 初始化 */
-onMounted(() => {
+const userOptions = ref<UserApi.UserVO[]>([]) // 用户列表
+onMounted(async () => {
   getDetail()
+  // 获得用户列表
+  userOptions.value = await UserApi.getSimpleUserList()
 })
 </script>

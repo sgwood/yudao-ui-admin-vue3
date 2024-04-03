@@ -27,6 +27,11 @@ export const getTenantIdByName = (name: string) => {
   return request.get({ url: '/system/tenant/get-id-by-name?name=' + name })
 }
 
+// 使用租户域名，获得租户信息
+export const getTenantByWebsite = (website: string) => {
+  return request.get({ url: '/system/tenant/get-by-website?website=' + website })
+}
+
 // 登出
 export const loginOut = () => {
   return request.post({ url: '/system/auth/logout' })
@@ -45,6 +50,18 @@ export const sendSmsCode = (data: SmsCodeVO) => {
 // 短信验证码登录
 export const smsLogin = (data: SmsLoginVO) => {
   return request.post({ url: '/system/auth/sms-login', data })
+}
+
+// 社交快捷登录，使用 code 授权码
+export function socialLogin(type: string, code: string, state: string) {
+  return request.post({
+    url: '/system/auth/social-login',
+    data: {
+      type,
+      code,
+      state
+    }
+  })
 }
 
 // 社交授权的跳转

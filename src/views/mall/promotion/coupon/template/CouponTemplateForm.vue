@@ -22,23 +22,15 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item
-        label="商品"
         v-if="formData.productScope === PromotionProductScopeEnum.SPU.scope"
+        label="商品"
         prop="productSpuIds"
       >
-        <div class="flex items-center gap-1 flex-wrap">
-          <div class="select-box spu-pic" v-for="(spu, index) in productSpus" :key="spu.id">
-            <el-image :src="spu.picUrl" />
-            <Icon icon="ep:circle-close-filled" class="del-icon" @click="handleRemoveSpu(index)" />
-          </div>
-          <div class="select-box" @click="openSpuTableSelect">
-            <Icon icon="ep:plus" />
-          </div>
-        </div>
+        <SpuShowcase v-model="formData.productSpuIds" />
       </el-form-item>
       <el-form-item
-        label="分类"
         v-if="formData.productScope === PromotionProductScopeEnum.CATEGORY.scope"
+        label="分类"
         prop="productCategoryIds"
       >
         <ProductCategorySelect v-model="formData.productCategoryIds" />
@@ -61,10 +53,10 @@
       >
         <el-input-number
           v-model="formData.discountPrice"
-          placeholder="请输入优惠金额，单位：元"
-          class="!w-400px mr-2"
-          :precision="2"
           :min="0"
+          :precision="2"
+          class="mr-2 !w-400px"
+          placeholder="请输入优惠金额，单位：元"
         />
         元
       </el-form-item>
@@ -75,11 +67,11 @@
       >
         <el-input-number
           v-model="formData.discountPercent"
-          placeholder="优惠券折扣不能小于 1 折，且不可大于 9.9 折"
-          class="!w-400px mr-2"
-          :precision="1"
-          :min="1"
           :max="9.9"
+          :min="1"
+          :precision="1"
+          class="mr-2 !w-400px"
+          placeholder="优惠券折扣不能小于 1 折，且不可大于 9.9 折"
         />
         折
       </el-form-item>
@@ -90,20 +82,20 @@
       >
         <el-input-number
           v-model="formData.discountLimitPrice"
-          placeholder="请输入最多优惠"
-          class="!w-400px mr-2"
-          :precision="2"
           :min="0"
+          :precision="2"
+          class="mr-2 !w-400px"
+          placeholder="请输入最多优惠"
         />
         元
       </el-form-item>
       <el-form-item label="满多少元可以使用" prop="usePrice">
         <el-input-number
           v-model="formData.usePrice"
-          placeholder="无门槛请设为 0"
-          class="!w-400px mr-2"
-          :precision="2"
           :min="0"
+          :precision="2"
+          class="mr-2 !w-400px"
+          placeholder="无门槛请设为 0"
         />
         元
       </el-form-item>
@@ -116,20 +108,20 @@
       <el-form-item v-if="formData.takeType === 1" label="发放数量" prop="totalCount">
         <el-input-number
           v-model="formData.totalCount"
-          placeholder="发放数量，没有之后不能领取或发放，-1 为不限制"
-          class="!w-400px mr-2"
-          :precision="0"
           :min="-1"
+          :precision="0"
+          class="mr-2 !w-400px"
+          placeholder="发放数量，没有之后不能领取或发放，-1 为不限制"
         />
         张
       </el-form-item>
       <el-form-item v-if="formData.takeType === 1" label="每人限领个数" prop="takeLimitCount">
         <el-input-number
           v-model="formData.takeLimitCount"
-          placeholder="设置为 -1 时，可无限领取"
-          class="!w-400px mr-2"
-          :precision="0"
           :min="-1"
+          :precision="0"
+          class="mr-2 !w-400px"
+          placeholder="设置为 -1 时，可无限领取"
         />
         张
       </el-form-item>
@@ -151,10 +143,10 @@
       >
         <el-date-picker
           v-model="formData.validTimes"
-          style="width: 240px"
-          value-format="x"
-          type="datetimerange"
           :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)]"
+          style="width: 240px"
+          type="datetimerange"
+          value-format="x"
         />
       </el-form-item>
       <el-form-item
@@ -165,18 +157,18 @@
         第
         <el-input-number
           v-model="formData.fixedStartTerm"
-          placeholder="0 为今天生效"
-          class="mx-2"
-          :precision="0"
           :min="0"
+          :precision="0"
+          class="mx-2"
+          placeholder="0 为今天生效"
         />
         至
         <el-input-number
           v-model="formData.fixedEndTerm"
-          placeholder="请输入结束天数"
-          class="mx-2"
-          :precision="0"
           :min="0"
+          :precision="0"
+          class="mx-2"
+          placeholder="请输入结束天数"
         />
         天有效
       </el-form-item>
@@ -186,19 +178,18 @@
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
   </Dialog>
-  <SpuTableSelect ref="spuTableSelectRef" multiple @change="handleSpuSelected" />
 </template>
 <script lang="ts" setup>
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import * as CouponTemplateApi from '@/api/mall/promotion/coupon/couponTemplate'
-import * as ProductSpuApi from '@/api/mall/product/spu'
 import {
   CouponTemplateValidityTypeEnum,
   PromotionDiscountTypeEnum,
   PromotionProductScopeEnum
 } from '@/utils/constants'
-import SpuTableSelect from '@/views/mall/product/spu/components/SpuTableSelect.vue'
+import SpuShowcase from '@/views/mall/product/spu/components/SpuShowcase.vue'
 import ProductCategorySelect from '@/views/mall/product/category/components/ProductCategorySelect.vue'
+import { convertToInteger, formatToFraction } from '@/utils'
 
 defineOptions({ name: 'CouponTemplateForm' })
 
@@ -250,7 +241,6 @@ const formRules = reactive({
   productCategoryIds: [{ required: true, message: '分类不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
-const productSpus = ref<ProductSpuApi.Spu[]>([]) // 商品列表
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
@@ -265,12 +255,11 @@ const open = async (type: string, id?: number) => {
       const data = await CouponTemplateApi.getCouponTemplate(id)
       formData.value = {
         ...data,
-        discountPrice: data.discountPrice !== undefined ? data.discountPrice / 100.0 : undefined,
+        discountPrice: formatToFraction(data.discountPrice),
         discountPercent:
           data.discountPercent !== undefined ? data.discountPercent / 10.0 : undefined,
-        discountLimitPrice:
-          data.discountLimitPrice !== undefined ? data.discountLimitPrice / 100.0 : undefined,
-        usePrice: data.usePrice !== undefined ? data.usePrice / 100.0 : undefined,
+        discountLimitPrice: formatToFraction(data.discountLimitPrice),
+        usePrice: formatToFraction(data.usePrice),
         validTimes: [data.validStartTime, data.validEndTime]
       }
       // 获得商品范围
@@ -294,17 +283,13 @@ const submitForm = async () => {
   try {
     const data = {
       ...formData.value,
-      discountPrice:
-        formData.value.discountPrice !== undefined ? formData.value.discountPrice * 100 : undefined,
+      discountPrice: convertToInteger(formData.value.discountPrice),
       discountPercent:
         formData.value.discountPercent !== undefined
           ? formData.value.discountPercent * 10
           : undefined,
-      discountLimitPrice:
-        formData.value.discountLimitPrice !== undefined
-          ? formData.value.discountLimitPrice * 100
-          : undefined,
-      usePrice: formData.value.usePrice !== undefined ? formData.value.usePrice * 100 : undefined,
+      discountLimitPrice: convertToInteger(formData.value.discountLimitPrice),
+      usePrice: convertToInteger(formData.value.usePrice),
       validStartTime:
         formData.value.validTimes && formData.value.validTimes.length === 2
           ? formData.value.validTimes[0]
@@ -358,7 +343,6 @@ const resetForm = () => {
     productCategoryIds: []
   }
   formRef.value?.resetFields()
-  productSpus.value = []
 }
 
 /** 获得商品范围 */
@@ -367,8 +351,6 @@ const getProductScope = async () => {
     case PromotionProductScopeEnum.SPU.scope:
       // 设置商品编号
       formData.value.productSpuIds = formData.value.productScopeValues
-      // 获得商品列表
-      productSpus.value = await ProductSpuApi.getSpuDetailList(formData.value.productScopeValues)
       break
     case PromotionProductScopeEnum.CATEGORY.scope:
       await nextTick(() => {
@@ -385,6 +367,7 @@ const getProductScope = async () => {
       break
   }
 }
+
 /** 设置商品范围 */
 function setProductScopeValues(data: CouponTemplateApi.CouponTemplateVO) {
   switch (formData.value.productScope) {
@@ -400,45 +383,6 @@ function setProductScopeValues(data: CouponTemplateApi.CouponTemplateVO) {
       break
   }
 }
-
-/** 活动商品的按钮 */
-const spuTableSelectRef = ref()
-const openSpuTableSelect = () => {
-  spuTableSelectRef.value.open(productSpus.value)
-}
-
-/** 选择商品后触发 */
-const handleSpuSelected = (spus: ProductSpuApi.Spu[]) => {
-  productSpus.value = spus
-  formData.value.productSpuIds = spus.map((spu) => spu.id) as []
-}
-
-/** 选择商品后触发 */
-const handleRemoveSpu = (index: number) => {
-  productSpus.value.splice(index, 1)
-  formData.value.productSpuIds.splice(index, 1)
-}
 </script>
 
-<style scoped lang="scss">
-.select-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed var(--el-border-color-darker);
-  border-radius: 8px;
-  width: 60px;
-  height: 60px;
-}
-.spu-pic {
-  position: relative;
-}
-.del-icon {
-  position: absolute;
-  z-index: 1;
-  width: 20px !important;
-  height: 20px !important;
-  right: -10px;
-  top: -10px;
-}
-</style>
+<style lang="scss" scoped></style>

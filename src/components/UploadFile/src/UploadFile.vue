@@ -2,25 +2,27 @@
   <div class="upload-file">
     <el-upload
       ref="uploadRef"
-      :multiple="props.limit > 1"
-      name="file"
-      v-model="valueRef"
       v-model:file-list="fileList"
-      :show-file-list="true"
+      :action="uploadUrl"
       :auto-upload="autoUpload"
-      :action="updateUrl"
-      :headers="uploadHeaders"
-      :limit="props.limit"
-      :drag="drag"
       :before-upload="beforeUpload"
-      :on-exceed="handleExceed"
-      :on-success="handleFileSuccess"
+      :drag="drag"
+      :limit="props.limit"
+      :multiple="props.limit > 1"
       :on-error="excelUploadError"
-      :on-remove="handleRemove"
+      :on-exceed="handleExceed"
       :on-preview="handlePreview"
+      :on-remove="handleRemove"
+      :on-success="handleFileSuccess"
+      :show-file-list="true"
+      :http-request="httpRequest"
       class="upload-file-uploader"
+      name="file"
     >
-      <el-button type="primary"><Icon icon="ep:upload-filled" />选取文件</el-button>
+      <el-button type="primary">
+        <Icon icon="ep:upload-filled" />
+        选取文件
+      </el-button>
       <template v-if="isShowTip" #tip>
         <div style="font-size: 8px">
           大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b>
@@ -33,11 +35,11 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { PropType } from 'vue'
-
 import { propTypes } from '@/utils/propTypes'
-import { getAccessToken, getTenantId } from '@/utils/auth'
-import type { UploadInstance, UploadUserFile, UploadProps, UploadRawFile } from 'element-plus'
+import type { UploadInstance, UploadProps, UploadRawFile, UploadUserFile } from 'element-plus'
+import { isString } from '@/utils/is'
+import { useUpload } from '@/components/UploadFile/src/useUpload'
+import { UploadFile } from 'element-plus/es/components/upload/src/upload'
 
 defineOptions({ name: 'UploadFile' })
 
@@ -45,12 +47,8 @@ const message = useMessage() // 消息弹窗
 const emit = defineEmits(['update:modelValue'])
 
 const props = defineProps({
-  modelValue: {
-    type: Array as PropType<UploadUserFile[]>,
-    required: true
-  },
+  modelValue: propTypes.oneOfType<string | string[]>([String, Array<String>]).isRequired,
   title: propTypes.string.def('文件上传'),
-  updateUrl: propTypes.string.def(import.meta.env.VITE_UPLOAD_URL),
   fileType: propTypes.array.def(['doc', 'xls', 'ppt', 'txt', 'pdf']), // 文件类型, 例如['png', 'jpg', 'jpeg']
   fileSize: propTypes.number.def(5), // 大小限制(MB)
   limit: propTypes.number.def(5), // 数量限制
@@ -58,16 +56,15 @@ const props = defineProps({
   drag: propTypes.bool.def(false), // 拖拽上传
   isShowTip: propTypes.bool.def(true) // 是否显示提示
 })
+
 // ========== 上传相关 ==========
-const valueRef = ref(props.modelValue)
 const uploadRef = ref<UploadInstance>()
 const uploadList = ref<UploadUserFile[]>([])
-const fileList = ref<UploadUserFile[]>(props.modelValue)
+const fileList = ref<UploadUserFile[]>([])
 const uploadNumber = ref<number>(0)
-const uploadHeaders = ref({
-  Authorization: 'Bearer ' + getAccessToken(),
-  'tenant-id': getTenantId()
-})
+
+const { uploadUrl, httpRequest } = useUpload()
+
 // 文件上传之前判断
 const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
   if (fileList.value.length >= props.limit) {
@@ -101,15 +98,15 @@ const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
 // 文件上传成功
 const handleFileSuccess: UploadProps['onSuccess'] = (res: any): void => {
   message.success('上传成功')
-  const fileListNew = fileList.value
-  fileListNew.pop()
-  fileList.value = fileListNew
+  // 删除自身
+  const index = fileList.value.findIndex((item) => item.response?.data === res.data)
+  fileList.value.splice(index, 1)
   uploadList.value.push({ name: res.data, url: res.data })
   if (uploadList.value.length == uploadNumber.value) {
-    fileList.value = fileList.value.concat(uploadList.value)
+    fileList.value.push(...uploadList.value)
     uploadList.value = []
     uploadNumber.value = 0
-    emit('update:modelValue', listToString(fileList.value))
+    emitUpdateModelValue()
   }
 }
 // 文件数超出提示
@@ -121,27 +118,53 @@ const excelUploadError: UploadProps['onError'] = (): void => {
   message.error('导入数据失败，请您重新上传！')
 }
 // 删除上传文件
-const handleRemove = (file) => {
-  const findex = fileList.value.map((f) => f.name).indexOf(file.name)
-  if (findex > -1) {
-    fileList.value.splice(findex, 1)
-    emit('update:modelValue', listToString(fileList.value))
+const handleRemove = (file: UploadFile) => {
+  const index = fileList.value.map((f) => f.name).indexOf(file.name)
+  if (index > -1) {
+    fileList.value.splice(index, 1)
+    emitUpdateModelValue()
   }
 }
 const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
   console.log(uploadFile)
 }
-// 对象转成指定字符串分隔
-const listToString = (list: UploadUserFile[], separator?: string) => {
-  let strs = ''
-  separator = separator || ','
-  for (let i in list) {
-    strs += list[i].url + separator
+
+// 监听模型绑定值变动
+watch(
+  () => props.modelValue,
+  (val: string | string[]) => {
+    if (!val) {
+      fileList.value = [] // fix：处理掉缓存，表单重置后上传组件的内容并没有重置
+      return
+    }
+
+    fileList.value = [] // 保障数据为空
+    // 情况1：字符串
+    if (isString(val)) {
+      fileList.value.push(
+        ...val.split(',').map((url) => ({ name: url.substring(url.lastIndexOf('/') + 1), url }))
+      )
+      return
+    }
+    // 情况2：数组
+    fileList.value.push(
+      ...(val as string[]).map((url) => ({ name: url.substring(url.lastIndexOf('/') + 1), url }))
+    )
+  },
+  { immediate: true, deep: true }
+)
+// 发送文件链接列表更新
+const emitUpdateModelValue = () => {
+  // 情况1：数组结果
+  let result: string | string[] = fileList.value.map((file) => file.url!)
+  // 情况2：逗号分隔的字符串
+  if (props.limit === 1 || isString(props.modelValue)) {
+    result = result.join(',')
   }
-  return strs != '' ? strs.substr(0, strs.length - 1) : ''
+  emit('update:modelValue', result)
 }
 </script>
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .upload-file-uploader {
   margin-bottom: 5px;
 }

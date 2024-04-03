@@ -86,7 +86,7 @@ const formData = reactive({
 })
 const formRef = ref() // 表单 Ref
 const deptOptions = ref<any[]>([]) // 部门树形结构
-const deptExpand = ref(false) // 展开/折叠
+const deptExpand = ref(true) // 展开/折叠
 const treeRef = ref() // 菜单树组件 Ref
 const treeNodeAll = ref(false) // 全选/全不选
 const checkStrictly = ref(true) // 是否严格模式，即父子不关联
@@ -102,6 +102,9 @@ const open = async (row: RoleApi.RoleVO) => {
   formData.name = row.name
   formData.code = row.code
   formData.dataScope = row.dataScope
+
+  await nextTick()
+  // 需要在 DOM 渲染完成后，再设置选中状态
   row.dataScopeDeptIds?.forEach((deptId: number) => {
     treeRef.value.setChecked(deptId, true, false)
   })
@@ -135,7 +138,7 @@ const submitForm = async () => {
 const resetForm = () => {
   // 重置选项
   treeNodeAll.value = false
-  deptExpand.value = false
+  deptExpand.value = true
   checkStrictly.value = true
   // 重置表单
   formData.value = {

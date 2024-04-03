@@ -9,7 +9,7 @@
       label-width="68px"
     >
       <el-form-item label="属性项" prop="propertyId">
-        <el-select v-model="queryParams.propertyId" class="!w-240px">
+        <el-select v-model="queryParams.propertyId" class="!w-240px" disabled>
           <el-option
             v-for="item in propertyOptions"
             :key="item.id"
@@ -45,8 +45,8 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="名称" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column label="编号" align="center" min-width="60" prop="id" />
+      <el-table-column label="属性值名称" align="center" min-width="150" prop="name" />
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column
         label="创建时间"
@@ -158,6 +158,6 @@ const handleDelete = async (id: number) => {
 onMounted(async () => {
   await getList()
   // 属性项下拉框数据
-  propertyOptions.value = await PropertyApi.getPropertyList({})
+  propertyOptions.value.push(await PropertyApi.getProperty(queryParams.propertyId))
 })
 </script>

@@ -1,4 +1,6 @@
 <template>
+  <doc-alert title="【交易】售后退款" url="https://doc.iocoder.cn/mall/trade-aftersale/" />
+
   <!-- 搜索 -->
   <ContentWrap>
     <el-form ref="queryFormRef" :inline="true" :model="queryParams" label-width="68px">
@@ -135,17 +137,16 @@
       </el-table-column>
       <el-table-column align="center" label="订单金额" prop="refundPrice">
         <template #default="scope">
-          <span>{{ floatToFixed2(scope.row.refundPrice) }}元</span>
+          <span>{{ fenToYuan(scope.row.refundPrice) }} 元</span>
         </template>
       </el-table-column>
-      <!-- TODO 芋艿：未来要加个会员链接 -->
       <el-table-column align="center" label="买家" prop="user.nickname" />
       <el-table-column align="center" label="申请时间" prop="createTime" width="180">
         <template #default="scope">
           <span>{{ formatDate(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="售后状态">
+      <el-table-column align="center" label="售后状态" width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.TRADE_AFTER_SALE_STATUS" :value="scope.row.status" />
         </template>
@@ -177,7 +178,7 @@ import { formatDate } from '@/utils/formatTime'
 import { createImageViewer } from '@/components/ImageViewer'
 import { TabsPaneContext } from 'element-plus'
 import { cloneDeep } from 'lodash-es'
-import { floatToFixed2 } from '@/utils'
+import { fenToYuan } from '@/utils'
 
 defineOptions({ name: 'TradeAfterSale' })
 
@@ -240,7 +241,7 @@ const tabClick = async (tab: TabsPaneContext) => {
 
 /** 处理退款 */
 const openAfterSaleDetail = (id: number) => {
-  push({ name: 'TradeAfterSaleDetail', params: { orderId: id } })
+  push({ name: 'TradeAfterSaleDetail', params: { id } })
 }
 
 /** 查看订单详情 */

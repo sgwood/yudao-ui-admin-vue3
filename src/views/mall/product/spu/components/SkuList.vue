@@ -8,9 +8,9 @@
     max-height="500"
     size="small"
   >
-    <el-table-column align="center" fixed="left" label="图片" min-width="100">
+    <el-table-column align="center" label="图片" min-width="65">
       <template #default="{ row }">
-        <UploadImg v-model="row.picUrl" height="80px" width="100%" />
+        <UploadImg v-model="row.picUrl" height="50px" width="50px" />
       </template>
     </el-table-column>
     <template v-if="formData!.specType && !isBatch">
@@ -34,12 +34,19 @@
         <el-input v-model="row.barCode" class="w-100%" />
       </template>
     </el-table-column>
-    <el-table-column align="center" label="销售价(元)" min-width="168">
+    <el-table-column align="center" label="销售价" min-width="168">
       <template #default="{ row }">
-        <el-input-number v-model="row.price" :min="0" :precision="2" :step="0.1" class="w-100%" />
+        <el-input-number
+          v-model="row.price"
+          :min="0"
+          :precision="2"
+          :step="0.1"
+          class="w-100%"
+          controls-position="right"
+        />
       </template>
     </el-table-column>
-    <el-table-column align="center" label="市场价(元)" min-width="168">
+    <el-table-column align="center" label="市场价" min-width="168">
       <template #default="{ row }">
         <el-input-number
           v-model="row.marketPrice"
@@ -47,10 +54,11 @@
           :precision="2"
           :step="0.1"
           class="w-100%"
+          controls-position="right"
         />
       </template>
     </el-table-column>
-    <el-table-column align="center" label="成本价(元)" min-width="168">
+    <el-table-column align="center" label="成本价" min-width="168">
       <template #default="{ row }">
         <el-input-number
           v-model="row.costPrice"
@@ -58,44 +66,61 @@
           :precision="2"
           :step="0.1"
           class="w-100%"
+          controls-position="right"
         />
       </template>
     </el-table-column>
     <el-table-column align="center" label="库存" min-width="168">
       <template #default="{ row }">
-        <el-input-number v-model="row.stock" :min="0" class="w-100%" />
+        <el-input-number v-model="row.stock" :min="0" class="w-100%" controls-position="right" />
       </template>
     </el-table-column>
     <el-table-column align="center" label="重量(kg)" min-width="168">
       <template #default="{ row }">
-        <el-input-number v-model="row.weight" :min="0" :precision="2" :step="0.1" class="w-100%" />
+        <el-input-number
+          v-model="row.weight"
+          :min="0"
+          :precision="2"
+          :step="0.1"
+          class="w-100%"
+          controls-position="right"
+        />
       </template>
     </el-table-column>
     <el-table-column align="center" label="体积(m^3)" min-width="168">
       <template #default="{ row }">
-        <el-input-number v-model="row.volume" :min="0" :precision="2" :step="0.1" class="w-100%" />
+        <el-input-number
+          v-model="row.volume"
+          :min="0"
+          :precision="2"
+          :step="0.1"
+          class="w-100%"
+          controls-position="right"
+        />
       </template>
     </el-table-column>
     <template v-if="formData!.subCommissionType">
       <el-table-column align="center" label="一级返佣(元)" min-width="168">
         <template #default="{ row }">
           <el-input-number
-            v-model="row.subCommissionFirstPrice"
+            v-model="row.firstBrokeragePrice"
             :min="0"
             :precision="2"
             :step="0.1"
             class="w-100%"
+            controls-position="right"
           />
         </template>
       </el-table-column>
       <el-table-column align="center" label="二级返佣(元)" min-width="168">
         <template #default="{ row }">
           <el-input-number
-            v-model="row.subCommissionSecondPrice"
+            v-model="row.secondBrokeragePrice"
             :min="0"
             :precision="2"
             :step="0.1"
             class="w-100%"
+            controls-position="right"
           />
         </template>
       </el-table-column>
@@ -124,7 +149,12 @@
     <el-table-column v-if="isComponent" type="selection" width="45" />
     <el-table-column align="center" label="图片" min-width="80">
       <template #default="{ row }">
-        <el-image :src="row.picUrl" class="w-60px h-60px" @click="imagePreview(row.picUrl)" />
+        <el-image
+          v-if="row.picUrl"
+          :src="row.picUrl"
+          class="h-50px w-50px"
+          @click="imagePreview(row.picUrl)"
+        />
       </template>
     </el-table-column>
     <template v-if="formData!.specType && !isBatch">
@@ -181,12 +211,12 @@
     <template v-if="formData!.subCommissionType">
       <el-table-column align="center" label="一级返佣(元)" min-width="80">
         <template #default="{ row }">
-          {{ row.subCommissionFirstPrice }}
+          {{ row.firstBrokeragePrice }}
         </template>
       </el-table-column>
       <el-table-column align="center" label="二级返佣(元)" min-width="80">
         <template #default="{ row }">
-          {{ row.subCommissionSecondPrice }}
+          {{ row.secondBrokeragePrice }}
         </template>
       </el-table-column>
     </template>
@@ -204,7 +234,7 @@
     <el-table-column v-if="isComponent" type="selection" width="45" />
     <el-table-column align="center" label="图片" min-width="80">
       <template #default="{ row }">
-        <el-image :src="row.picUrl" class="w-60px h-60px" @click="imagePreview(row.picUrl)" />
+        <el-image :src="row.picUrl" class="h-60px w-60px" @click="imagePreview(row.picUrl)" />
       </template>
     </el-table-column>
     <template v-if="formData!.specType">
@@ -295,8 +325,8 @@ const skuList = ref<Sku[]>([
     stock: 0, // 库存
     weight: 0, // 商品重量
     volume: 0, // 商品体积
-    subCommissionFirstPrice: 0, // 一级分销的佣金
-    subCommissionSecondPrice: 0 // 二级分销的佣金
+    firstBrokeragePrice: 0, // 一级分销的佣金
+    secondBrokeragePrice: 0 // 二级分销的佣金
   }
 ]) // 批量添加时的临时数据
 
@@ -415,8 +445,8 @@ const generateTableData = (propertyList: any[]) => {
       stock: 0,
       weight: 0,
       volume: 0,
-      subCommissionFirstPrice: 0,
-      subCommissionSecondPrice: 0
+      firstBrokeragePrice: 0,
+      secondBrokeragePrice: 0
     }
     // 如果存在属性相同的 sku 则不做处理
     const index = formData.value!.skus!.findIndex(
@@ -491,8 +521,8 @@ watch(
           stock: 0,
           weight: 0,
           volume: 0,
-          subCommissionFirstPrice: 0,
-          subCommissionSecondPrice: 0
+          firstBrokeragePrice: 0,
+          secondBrokeragePrice: 0
         }
       ]
     }
