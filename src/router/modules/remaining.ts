@@ -70,6 +70,26 @@ const remainingRouter: AppRouteRecordRaw[] = [
       }
     ]
   },
+  // {
+  //   path: '/ai/music',
+  //   component: Layout,
+  //   redirect: '/index',
+  //   name: 'AIMusic',
+  //   meta: {},
+  //   children: [
+  //     {
+  //       path: 'index',
+  //       component: () => import('@/views/ai/music/components/index.vue'),
+  //       name: 'AIMusicIndex',
+  //       meta: {
+  //         title: 'AI 音乐',
+  //         icon: 'ep:home-filled',
+  //         noCache: false,
+  //         affix: true
+  //       }
+  //     }
+  //   ]
+  // },
   {
     path: '/user',
     component: Layout,
@@ -341,7 +361,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/mall/product/spu/form/index.vue'),
         name: 'ProductSpuAdd',
         meta: {
-          noCache: true,
+          noCache: false, // 需要缓存
           hidden: true,
           canTo: true,
           icon: 'ep:edit',
