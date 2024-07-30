@@ -63,7 +63,7 @@ export const removeLoginForm = () => {
 // ========== 租户相关 ==========
 
 export const getTenantId = () => {
-  return wsCache.get(CACHE_KEY.TenantId)
+  return wsCache.get(CACHE_KEY.TenantId) ? wsCache.get(CACHE_KEY.TenantId) :1
 }
 
 export const setTenantId = (username: string) => {
