@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Dialog v-model="dialogVisible" :title="dialogTitle" @closed="close" width="800px">
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="800px">
       <el-form
         ref="formRef"
         :model="formData"
@@ -13,7 +13,7 @@
             <el-radio
               v-for="dict in getDictOptions(DICT_TYPE.COMMON_STATUS)"
               :key="parseInt(dict.value)"
-              :label="parseInt(dict.value)"
+              :value="parseInt(dict.value)"
             >
               {{ dict.label }}
             </el-radio>
