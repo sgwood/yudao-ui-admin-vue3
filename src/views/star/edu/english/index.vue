@@ -1,9 +1,13 @@
 <template>
   <ContentWrap>
-    <div @click="toChinese" class="mt-12">语文</div>
-    <div @click="toMath" class="mt-12">数学</div>
-    <div @click="toEnglish" class="mt-12 mb-15 cursor-wait">英语</div>
+    <div @click="toDocument" class="mt-12">bilibili</div>
+    <div @click="toDocument" class="mt-12">微信</div>
+    <div @click="toDocument" class="mt-12 mb-15 cursor-wait">动画短片</div>
   </ContentWrap>
+
+  <!-- 列表 -->
+  <ContentWrap />
+
   <!-- 表单弹窗：添加/修改 -->
   <EduPlanForm ref="formRef" @success="getList" />
 </template>
@@ -36,15 +40,13 @@ const exportLoading = ref(false) // 导出的加载中
 
 const { push } = useRouter()
 
-const toChinese = async () => {
-  push('/edu/edu-plan')
+const toProfile = async () => {
+  push('/user/profile')
 }
-
-const toMath = async () => {
-  push('/edu/edu-plan')
-}
-const toEnglish = async () => {
-  push('/edu/english')
+const toDocument = () => {
+  window.open(
+    'https://www.bilibili.com/video/BV1aQ4y1r7qX?spm_id_from=333.880.my_history.page.click'
+  )
 }
 /** 查询列表 */
 const getList = async () => {
