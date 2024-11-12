@@ -1,9 +1,17 @@
 <template>
   <ContentWrap>
-    <div @click="toChinese" class="mt-12">语文</div>
-    <div @click="toMath" class="mt-12">数学</div>
-    <div @click="toEnglish" class="mt-12 mb-15 cursor-wait">英语</div>
+    <div @click="toWordLevel22" class="mt-12">二年级下册视频</div>
+    <el-divider />
+    <div @click="toWordLevel31" class="mt-12">三年级上册视频</div>
+    <el-divider />
+    <div @click="toWordLevel32" class="mt-12">三年级下册视频</div>
+    <el-divider />
+    <div @click="toWordLevel41" class="mt-12">四年级上册视频</div>
   </ContentWrap>
+
+  <!-- 列表 -->
+  <ContentWrap />
+
   <!-- 表单弹窗：添加/修改 -->
   <EduPlanForm ref="formRef" @success="getList" />
 </template>
@@ -36,15 +44,18 @@ const exportLoading = ref(false) // 导出的加载中
 
 const { push } = useRouter()
 
-const toChinese = async () => {
-  push('/edu/chinese')
+const toWordLevel22 = async () => {
+  window.open('https://www.bilibili.com/video/BV1Z54y1R7GR/')
 }
 
-const toMath = async () => {
-  //push('/edu/edu-plan')
+const toWordLevel31 = async () => {
+  window.open('https://www.bilibili.com/video/BV1Ge411G77N')
 }
-const toEnglish = async () => {
-  push('/edu/english')
+const toWordLevel32 = async () => {
+  window.open('https://www.bilibili.com/video/BV1aA4m1G7tE')
+}
+const toWordLevel41 = async () => {
+  window.open('https://www.bilibili.com/video/BV1rS421A7G7')
 }
 /** 查询列表 */
 const getList = async () => {
