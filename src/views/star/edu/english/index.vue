@@ -1,15 +1,15 @@
 <template>
   <ContentWrap>
-    <div @click="toWordLevel31" class="mt-12">三年级上册视频</div>
+    <div @click="toWordLevel31" class="mt-12">三年级上册单词和课文视频</div>
     <div @click="toWordLevel311" class="mt-12">三年级上册单词课文知识点全攻略</div>
-
-    <div @click="toWordLevel32" class="mt-12">三年级下册视频</div>
+    <el-divider />
+    <div @click="toWordLevel32" class="mt-12">三年级下册单词和课文视频</div>
     <div @click="toWordLevel321" class="mt-12">三年级下册单词课文知识点全攻略</div>
-
-    <div @click="toWordLevel41" class="mt-12">单词和课文</div>
+    <el-divider />
+    <div @click="toWordLevel41" class="mt-12">四年级上册单词和课文视频</div>
     <div @click="toWordLevel411" class="mt-12">四年级上册知识点全攻略</div>
-
-    <div @click="toWordLevel42" class="mt-12">四年级下册</div>
+    <el-divider />
+    <div @click="toWordLevel42" class="mt-12">四年级下册单词和课文视频</div>
     <div @click="toWordLevel421" class="mt-12">四年级下册知识点全攻略</div>
   </ContentWrap>
 
