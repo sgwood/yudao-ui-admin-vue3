@@ -1,8 +1,16 @@
 <template>
   <ContentWrap>
-    <div @click="toDocument" class="mt-12">bilibili</div>
-    <div @click="toDocument" class="mt-12">微信</div>
-    <div @click="toDocument" class="mt-12 mb-15 cursor-wait">动画短片</div>
+    <div @click="toWordLevel31" class="mt-12">三年级上册视频</div>
+    <div @click="toWordLevel311" class="mt-12">三年级上册单词课文知识点全攻略</div>
+
+    <div @click="toWordLevel32" class="mt-12">三年级下册视频</div>
+    <div @click="toWordLevel321" class="mt-12">三年级下册单词课文知识点全攻略</div>
+
+    <div @click="toWordLevel41" class="mt-12">单词和课文</div>
+    <div @click="toWordLevel411" class="mt-12">四年级上册知识点全攻略</div>
+
+    <div @click="toWordLevel42" class="mt-12">四年级下册</div>
+    <div @click="toWordLevel421" class="mt-12">四年级下册知识点全攻略</div>
   </ContentWrap>
 
   <!-- 列表 -->
@@ -40,13 +48,35 @@ const exportLoading = ref(false) // 导出的加载中
 
 const { push } = useRouter()
 
-const toProfile = async () => {
-  push('/user/profile')
+const toWordLevel31 = async () => {
+  window.open('https://www.bilibili.com/video/BV1vv4y1J7Ym')
 }
-const toDocument = () => {
-  window.open(
-    'https://www.bilibili.com/video/BV1aQ4y1r7qX?spm_id_from=333.880.my_history.page.click'
-  )
+
+const toWordLevel311 = async () => {
+  window.open('https://www.bilibili.com/video/BV1Nq4y1d7P6')
+}
+
+const toWordLevel32 = async () => {
+  window.open('https://www.bilibili.com/video/BV1rc411h7GY/')
+}
+
+const toWordLevel321 = async () => {
+  window.open('https://www.bilibili.com/video/BV1rF411z79z')
+}
+
+const toWordLevel41 = () => {
+  window.open('https://www.bilibili.com/video/BV12K4y1r7Bt/')
+}
+
+const toWordLevel411 = () => {
+  window.open('https://www.bilibili.com/video/BV1134y1U7VG')
+}
+
+const toWordLevel42 = () => {
+  window.open('https://www.bilibili.com/video/BV1uV411o7G8/')
+}
+const toWordLevel421 = () => {
+  window.open('https://www.bilibili.com/video/BV1eU4y1K7Ge')
 }
 /** 查询列表 */
 const getList = async () => {
