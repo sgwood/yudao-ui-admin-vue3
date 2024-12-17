@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash-es'
+import { TaskStatusEnum } from '@/api/bpm/task'
 import * as RoleApi from '@/api/system/role'
 import * as DeptApi from '@/api/system/dept'
 import * as PostApi from '@/api/system/post'
@@ -13,8 +14,9 @@ import {
   NODE_DEFAULT_NAME,
   AssignStartUserHandlerType,
   AssignEmptyHandlerType,
-  FieldPermissionType
+  FieldPermissionType,
 } from './consts'
+import { parseFormFields } from '@/components/FormCreate/src/utils/index'
 export function useWatchNode(props: { flowNode: SimpleFlowNode }): Ref<SimpleFlowNode> {
   const node = ref<SimpleFlowNode>(props.flowNode)
   watch(
@@ -26,12 +28,23 @@ export function useWatchNode(props: { flowNode: SimpleFlowNode }): Ref<SimpleFlo
   return node
 }
 
+// 解析 formCreate 所有表单字段, 并返回
+const parseFormCreateFields = (formFields?: string[]) => {
+  const result: Array<Record<string, any>> = []
+  if (formFields) {
+    formFields.forEach((fieldStr: string) => {
+      parseFormFields(JSON.parse(fieldStr), result)
+    })
+  }
+  return result
+}
+
 /**
  * @description 表单数据权限配置，用于发起人节点 、审批节点、抄送节点
  */
 export function useFormFieldsPermission(defaultPermission: FieldPermissionType) {
   // 字段权限配置. 需要有 field, title,  permissioin 属性
-  const fieldsPermissionConfig = ref<Array<Record<string, string>>>([])
+  const fieldsPermissionConfig = ref<Array<Record<string, any>>>([])
 
   const formType = inject<Ref<number>>('formType') // 表单类型
 
@@ -44,49 +57,26 @@ export function useFormFieldsPermission(defaultPermission: FieldPermissionType) 
   }
   // 默认的表单权限： 获取表单的所有字段，设置字段默认权限为只读
   const getDefaultFieldsPermission = (formFields?: string[]) => {
-    const defaultFieldsPermission: Array<Record<string, string>> = []
+    let defaultFieldsPermission: Array<Record<string, any>> = []
     if (formFields) {
-      formFields.forEach((fieldStr: string) => {
-        parseFieldsSetDefaultPermission(JSON.parse(fieldStr), defaultFieldsPermission)
+      defaultFieldsPermission = parseFormCreateFields(formFields).map((item) => {
+        return {
+          field: item.field,
+          title: item.title,
+          permission: defaultPermission
+        }
       })
     }
     return defaultFieldsPermission
   }
-  // 解析字段。赋给默认权限
-  const parseFieldsSetDefaultPermission = (
-    rule: Record<string, any>,
-    fieldsPermission: Array<Record<string, string>>,
-    parentTitle: string = ''
-  ) => {
-    const { /**type,*/ field, title: tempTitle, children } = rule
-    if (field && tempTitle) {
-      let title = tempTitle
-      if (parentTitle) {
-        title = `${parentTitle}.${tempTitle}`
-      }
-      fieldsPermission.push({
-        field,
-        title,
-        permission: defaultPermission
-      })
-      // TODO 子表单 需要处理子表单字段
-      // if (type === 'group' && rule.props?.rule && Array.isArray(rule.props.rule)) {
-      //   // 解析子表单的字段
-      //   rule.props.rule.forEach((item) => {
-      //     parseFieldsSetDefaultPermission(item, fieldsPermission, title)
-      //   })
-      // }
-    }
-    if (children && Array.isArray(children)) {
-      children.forEach((rule) => {
-        parseFieldsSetDefaultPermission(rule, fieldsPermission)
-      })
-    }
-  }
+
+  // 获取表单的所有字段，作为下拉框选项
+  const formFieldOptions = parseFormCreateFields(unref(formFields))
 
   return {
     formType,
     fieldsPermissionConfig,
+    formFieldOptions,
     getNodeConfigFormFields
   }
 }
@@ -94,50 +84,8 @@ export function useFormFieldsPermission(defaultPermission: FieldPermissionType) 
  * @description 获取表单的字段
  */
 export function useFormFields() {
-  // 解析后的表单字段
   const formFields = inject<Ref<string[]>>('formFields') // 流程表单字段
-  const parseFormFields = () => {
-    const parsedFormFields: Array<Record<string, string>> = []
-    if (formFields) {
-      formFields.value.forEach((fieldStr: string) => {
-        parseField(JSON.parse(fieldStr), parsedFormFields)
-      })
-    }
-    return parsedFormFields
-  }
-  // 解析字段。
-  const parseField = (
-    rule: Record<string, any>,
-    parsedFormFields: Array<Record<string, string>>,
-    parentTitle: string = ''
-  ) => {
-    const { field, title: tempTitle, children, type } = rule
-    if (field && tempTitle) {
-      let title = tempTitle
-      if (parentTitle) {
-        title = `${parentTitle}.${tempTitle}`
-      }
-      parsedFormFields.push({
-        field,
-        title,
-        type
-      })
-      // TODO 子表单 需要处理子表单字段
-      // if (type === 'group' && rule.props?.rule && Array.isArray(rule.props.rule)) {
-      //   // 解析子表单的字段
-      //   rule.props.rule.forEach((item) => {
-      //     parseFieldsSetDefaultPermission(item, fieldsPermission, title)
-      //   })
-      // }
-    }
-    if (children && Array.isArray(children)) {
-      children.forEach((rule) => {
-        parseField(rule, parsedFormFields)
-      })
-    }
-  }
-
-  return parseFormFields()
+  return parseFormCreateFields(unref(formFields))
 }
 
 export type UserTaskFormType = {
@@ -151,6 +99,8 @@ export type UserTaskFormType = {
   userGroups?: number[] // 用户组
   postIds?: number[] // 岗位
   expression?: string // 流程表达式
+  formUser?: string // 表单内用户字段
+  formDept?: string // 表单内部门字段
   approveRatio?: number
   rejectHandlerType?: RejectHandlerType
   returnNodeId?: string
@@ -173,6 +123,8 @@ export type CopyTaskFormType = {
   userIds?: number[] // 用户
   userGroups?: number[] // 用户组
   postIds?: number[] // 岗位
+  formUser?: string // 表单内用户字段
+  formDept?: string // 表单内部门字段
   expression?: string // 流程表达式
 }
 
@@ -186,6 +138,7 @@ export function useNodeForm(nodeType: NodeType) {
   const deptOptions = inject<Ref<DeptApi.DeptVO[]>>('deptList') // 部门列表
   const userGroupOptions = inject<Ref<UserGroupApi.UserGroupVO[]>>('userGroupList') // 用户组列表
   const deptTreeOptions = inject('deptTree') // 部门树
+  const formFields = inject<Ref<string[]>>('formFields') // 流程表单字段
   const configForm = ref<UserTaskFormType | CopyTaskFormType>()
   if (nodeType === NodeType.USER_TASK_NODE) {
     configForm.value = {
@@ -281,6 +234,18 @@ export function useNodeForm(nodeType: NodeType) {
       }
     }
 
+    // 表单内用户字段
+    if (configForm.value?.candidateStrategy === CandidateStrategy.FORM_USER) {
+      const formFieldOptions = parseFormCreateFields(unref(formFields))
+      const item = formFieldOptions.find((item) => item.field === configForm.value?.formUser)
+      showText = `表单用户：${item?.title}`
+    }
+
+    // 表单内部门负责人
+    if (configForm.value?.candidateStrategy === CandidateStrategy.FORM_DEPT_LEADER) {
+      showText = `表单内部门负责人`
+    }
+
     // 发起人自选
     if (configForm.value?.candidateStrategy === CandidateStrategy.START_USER_SELECT) {
       showText = `发起人自选`
@@ -327,6 +292,9 @@ export function useNodeForm(nodeType: NodeType) {
       case CandidateStrategy.USER_GROUP:
         candidateParam = configForm.value.userGroups!.join(',')
         break
+      case CandidateStrategy.FORM_USER:
+        candidateParam = configForm.value.formUser!
+        break
       case CandidateStrategy.EXPRESSION:
         candidateParam = configForm.value.expression!
         break
@@ -344,6 +312,13 @@ export function useNodeForm(nodeType: NodeType) {
         // 候选人参数格式: | 分隔 。左边为部门（多个部门用 , 分隔）。 右边为部门层级
         const deptIds = configForm.value.deptIds!.join(',')
         candidateParam = deptIds.concat('|' + configForm.value.deptLevel + '')
+        break
+      }
+      // 表单内部门的负责人
+      case CandidateStrategy.FORM_DEPT_LEADER: {
+        // 候选人参数格式: | 分隔 。左边为表单内部门字段。 右边为部门层级
+        const deptFieldOnForm = configForm.value.formDept!
+        candidateParam = deptFieldOnForm.concat('|' + configForm.value.deptLevel + '')
         break
       }
       default:
@@ -375,6 +350,9 @@ export function useNodeForm(nodeType: NodeType) {
       case CandidateStrategy.USER_GROUP:
         configForm.value.userGroups = candidateParam.split(',').map((item) => +item)
         break
+      case CandidateStrategy.FORM_USER:
+        configForm.value.formUser = candidateParam
+        break
       case CandidateStrategy.EXPRESSION:
         configForm.value.expression = candidateParam
         break
@@ -392,6 +370,14 @@ export function useNodeForm(nodeType: NodeType) {
         // 候选人参数格式: | 分隔 。左边为部门（多个部门用 , 分隔）。 右边为部门层级
         const paramArray = candidateParam.split('|')
         configForm.value.deptIds = paramArray[0].split(',').map((item) => +item)
+        configForm.value.deptLevel = +paramArray[1]
+        break
+      }
+      // 表单内的部门负责人
+      case CandidateStrategy.FORM_DEPT_LEADER: {
+        // 候选人参数格式: | 分隔 。左边为表单内的部门字段。 右边为部门层级
+        const paramArray = candidateParam.split('|')
+        configForm.value.formDept = paramArray[0]
         configForm.value.deptLevel = +paramArray[1]
         break
       }
@@ -475,4 +461,27 @@ export function useNodeName2(node: Ref<SimpleFlowNode>, nodeType: NodeType) {
     clickTitle,
     blurEvent
   }
+}
+
+/**
+ * @description 根据节点任务状态，获取节点任务状态样式
+ */
+export function useTaskStatusClass(taskStatus: TaskStatusEnum | undefined): string {
+  if (!taskStatus) {
+    return ''
+  }
+  if (taskStatus === TaskStatusEnum.APPROVE) {
+    return 'status-pass'
+  }
+  if (taskStatus === TaskStatusEnum.RUNNING) {
+    return 'status-running'
+  }
+  if (taskStatus === TaskStatusEnum.REJECT) {
+    return 'status-reject'
+  }
+  if (taskStatus === TaskStatusEnum.CANCEL) {
+    return 'status-cancel'
+  }
+
+  return ''
 }
