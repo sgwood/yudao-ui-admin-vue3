@@ -3,11 +3,19 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import qs from 'qs'
 import { config } from '@/config/axios/config'
-import { getAccessToken, getRefreshToken, getTenantId, removeToken, setToken } from '@/utils/auth'
+import {
+  getAccessToken,
+  getRefreshToken,
+  getTenantId,
+  getVisitTenantId,
+  removeToken,
+  setToken
+} from '@/utils/auth'
 import errorCode from './errorCode'
 
 import { resetRouter } from '@/router'
 import { deleteUserCache } from '@/hooks/web/useCache'
+import { ApiEncrypt } from '@/utils/encrypt'
 
 const tenantEnable = import.meta.env.VITE_APP_TENANT_ENABLE
 const { result_code, base_url, request_timeout } = config
@@ -24,7 +32,7 @@ export const isRelogin = { show: false }
 let requestList: any[] = []
 // 是否正在刷新中
 let isRefreshToken = false
-// 请求白名单，无须token的接口
+// 请求白名单，无须 token 的接口
 const whiteList: string[] = ['/login', '/refresh-token']
 
 // 创建axios实例
@@ -55,6 +63,11 @@ service.interceptors.request.use(
     if (tenantEnable && tenantEnable === 'true') {
       const tenantId = getTenantId()
       if (tenantId) config.headers['tenant-id'] = tenantId
+      // 只有登录时，才设置 visit-tenant-id 访问租户
+      const visitTenantId = getVisitTenantId()
+      if (config.headers.Authorization && visitTenantId) {
+        config.headers['visit-tenant-id'] = visitTenantId
+      }
     }
     const method = config.method?.toUpperCase()
     // 防止 GET 请求缓存
@@ -69,6 +82,20 @@ service.interceptors.request.use(
         if (config.data && typeof config.data !== 'string') {
           config.data = qs.stringify(config.data)
         }
+      }
+    }
+    // 是否 API 加密
+    if ((config!.headers || {}).isEncrypt) {
+      try {
+        // 加密请求数据
+        if (config.data) {
+          config.data = ApiEncrypt.encryptRequest(config.data)
+          // 设置加密标识头
+          config.headers[ApiEncrypt.getEncryptHeader()] = 'true'
+        }
+      } catch (error) {
+        console.error('请求数据加密失败:', error)
+        throw error
       }
     }
     return config
@@ -89,6 +116,22 @@ service.interceptors.response.use(
       // 返回“[HTTP]请求没有返回值”;
       throw new Error()
     }
+
+    // 检查是否需要解密响应数据
+    const encryptHeader = ApiEncrypt.getEncryptHeader()
+    const isEncryptResponse =
+      response.headers[encryptHeader] === 'true' ||
+      response.headers[encryptHeader.toLowerCase()] === 'true'
+    if (isEncryptResponse && typeof data === 'string') {
+      try {
+        // 解密响应数据
+        data = ApiEncrypt.decryptResponse(data)
+      } catch (error) {
+        console.error('响应数据解密失败:', error)
+        throw new Error('响应数据解密失败: ' + (error as Error).message)
+      }
+    }
+
     const { t } = useI18n()
     // 未设置状态码则默认成功状态
     // 二进制数据则直接返回，例如说 Excel 导出
@@ -201,6 +244,10 @@ const refreshToken = async () => {
 const handleAuthorized = () => {
   const { t } = useI18n()
   if (!isRelogin.show) {
+    // 如果已经到登录页面则不进行弹窗提示
+    if (window.location.href.includes('login')) {
+      return
+    }
     isRelogin.show = true
     ElMessageBox.confirm(t('sys.api.timeoutMessage'), t('common.confirmTitle'), {
       showCancelButton: false,

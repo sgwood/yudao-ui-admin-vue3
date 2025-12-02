@@ -85,8 +85,6 @@
     </div>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改流程 -->
-  <ModelForm ref="formRef" @success="getList" />
   <!-- 表单弹窗：添加分类 -->
   <CategoryForm ref="categoryFormRef" @success="getList" />
   <!-- 弹窗：表单详情 -->
@@ -99,13 +97,13 @@
 import draggable from 'vuedraggable'
 import { CategoryApi } from '@/api/bpm/category'
 import * as ModelApi from '@/api/bpm/model'
-import ModelForm from './ModelForm.vue'
 import CategoryForm from '../category/CategoryForm.vue'
 import { cloneDeep } from 'lodash-es'
 import CategoryDraggableModel from './CategoryDraggableModel.vue'
 
 defineOptions({ name: 'BpmModel' })
 
+const { push } = useRouter()
 const message = useMessage() // 消息弹窗
 const loading = ref(true) // 列表的加载中
 const isCategorySorting = ref(false) // 是否 category 正处于排序状态
@@ -122,9 +120,15 @@ const handleQuery = () => {
 }
 
 /** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  if (type === 'create') {
+    push({ name: 'BpmModelCreate' })
+  } else {
+    push({
+      name: 'BpmModelUpdate',
+      params: { id }
+    })
+  }
 }
 
 /** 流程表单的详情按钮操作 */
@@ -198,22 +202,25 @@ const getList = async () => {
 }
 
 /** 初始化 **/
-onMounted(() => {
+onActivated(() => {
   getList()
 })
 </script>
 
 <style lang="scss" scoped>
 :deep() {
-  .el-table--fit .el-table__inner-wrapper:before {
+  .el-table--fit .el-table__inner-wrapper::before {
     height: 0;
   }
+
   .el-card {
     border-radius: 8px;
   }
+
   .el-form--inline .el-form-item {
     margin-right: 10px;
   }
+  
   .el-divider--horizontal {
     margin-top: 6px;
   }

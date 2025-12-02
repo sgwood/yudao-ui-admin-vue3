@@ -6,7 +6,11 @@
   />
   <!-- 审批节点 -->
   <UserTaskNode
-    v-if="currentNode && currentNode.type === NodeType.USER_TASK_NODE"
+    v-if="
+      currentNode &&
+      (currentNode.type === NodeType.USER_TASK_NODE ||
+        currentNode.type === NodeType.TRANSACTOR_NODE)
+    "
     :flow-node="currentNode"
     @update:flow-node="handleModelValueUpdate"
     @find:parent-node="findFromParentNode"
@@ -38,6 +42,30 @@
     @update:model-value="handleModelValueUpdate"
     @find:parent-node="findFromParentNode"
   />
+  <!-- 延迟器节点 -->
+  <DelayTimerNode
+    v-if="currentNode && currentNode.type === NodeType.DELAY_TIMER_NODE"
+    :flow-node="currentNode"
+    @update:flow-node="handleModelValueUpdate"
+  />
+  <!-- 路由分支节点 -->
+  <RouterNode
+    v-if="currentNode && currentNode.type === NodeType.ROUTER_BRANCH_NODE"
+    :flow-node="currentNode"
+    @update:flow-node="handleModelValueUpdate"
+  />
+  <!-- 触发器节点 -->
+  <TriggerNode
+    v-if="currentNode && currentNode.type === NodeType.TRIGGER_NODE"
+    :flow-node="currentNode"
+    @update:flow-node="handleModelValueUpdate"
+  />
+  <!-- 子流程节点 -->
+  <ChildProcessNode
+    v-if="currentNode && currentNode.type === NodeType.CHILD_PROCESS_NODE"
+    :flow-node="currentNode"
+    @update:flow-node="handleModelValueUpdate"
+  />
   <!-- 递归显示孩子节点  -->
   <ProcessNodeTree
     v-if="currentNode && currentNode.childNode"
@@ -60,6 +88,10 @@ import CopyTaskNode from './nodes/CopyTaskNode.vue'
 import ExclusiveNode from './nodes/ExclusiveNode.vue'
 import ParallelNode from './nodes/ParallelNode.vue'
 import InclusiveNode from './nodes/InclusiveNode.vue'
+import DelayTimerNode from './nodes/DelayTimerNode.vue'
+import RouterNode from './nodes/RouterNode.vue'
+import TriggerNode from './nodes/TriggerNode.vue'
+import ChildProcessNode from './nodes/ChildProcessNode.vue'
 import { SimpleFlowNode, NodeType } from './consts'
 import { useWatchNode } from './node'
 defineOptions({

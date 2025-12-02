@@ -1,6 +1,7 @@
 <template>
   <div v-loading="loading" class="overflow-auto">
     <SimpleProcessModel
+      ref="simpleProcessModelRef"
       v-if="processNodeTree"
       :flow-node="processNodeTree"
       :readonly="false"
@@ -24,38 +25,86 @@
 
 <script setup lang="ts">
 import SimpleProcessModel from './SimpleProcessModel.vue'
-import { updateBpmSimpleModel, getBpmSimpleModel } from '@/api/bpm/simple'
 import { SimpleFlowNode, NodeType, NodeId, NODE_DEFAULT_TEXT } from './consts'
-import { getModel } from '@/api/bpm/model'
-import { getForm, FormVO } from '@/api/bpm/form'
+import { getForm } from '@/api/bpm/form'
 import { handleTree } from '@/utils/tree'
 import * as RoleApi from '@/api/system/role'
 import * as DeptApi from '@/api/system/dept'
 import * as PostApi from '@/api/system/post'
 import * as UserApi from '@/api/system/user'
 import * as UserGroupApi from '@/api/bpm/userGroup'
+import { BpmModelFormType } from '@/utils/constants'
 
 defineOptions({
   name: 'SimpleProcessDesigner'
 })
+
 const emits = defineEmits(['success']) // 保存成功事件
 
 const props = defineProps({
-  modelId: {
+  modelName: {
     type: String,
-    required: true
+    required: false
+  },
+  // 流程表单 ID
+  modelFormId: {
+    type: Number,
+    required: false,
+    default: undefined,
+  },
+   // 表单类型
+  modelFormType: {
+    type: Number,
+    required: false,
+    default: BpmModelFormType.NORMAL,
+  },
+  // 可发起流程的人员编号
+  startUserIds: {
+    type: Array,
+    required: false
+  },
+  // 可发起流程的部门编号
+  startDeptIds: {
+    type: Array,
+    required: false
   }
 })
 
+const processData = inject('processData') as Ref
 const loading = ref(false)
 const formFields = ref<string[]>([])
-const formType = ref(20)
+const formType = ref(props.modelFormType);
+
+// 监听 modelFormType 变化
+watch(
+  () => props.modelFormType,
+  (newVal) => {
+    formType.value = newVal;
+  },
+);
+
+// 监听 modelFormId 变化
+watch(
+  () => props.modelFormId,
+  async (newVal) => {
+    if (newVal) {
+      const form = await getForm(newVal);
+      formFields.value = form?.fields;
+    } else {
+      // 如果 modelFormId 为空，清空表单字段
+      formFields.value = [];
+    }
+  },
+  { immediate: true },
+);
+
 const roleOptions = ref<RoleApi.RoleVO[]>([]) // 角色列表
 const postOptions = ref<PostApi.PostVO[]>([]) // 岗位列表
 const userOptions = ref<UserApi.UserVO[]>([]) // 用户列表
 const deptOptions = ref<DeptApi.DeptVO[]>([]) // 部门列表
 const deptTreeOptions = ref()
 const userGroupOptions = ref<UserGroupApi.UserGroupVO[]>([]) // 用户组列表
+
 provide('formFields', formFields)
 provide('formType', formType)
 provide('roleList', roleOptions)
@@ -64,33 +113,49 @@ provide('userList', userOptions)
 provide('deptList', deptOptions)
 provide('userGroupList', userGroupOptions)
 provide('deptTree', deptTreeOptions)
+provide('startUserIds', props.startUserIds)
+provide('startDeptIds', props.startDeptIds)
+provide('tasks', [])
+provide('processInstance', {})
+
 
 const message = useMessage() // 国际化
 const processNodeTree = ref<SimpleFlowNode | undefined>()
+provide('processNodeTree', processNodeTree)
 const errorDialogVisible = ref(false)
 let errorNodes: SimpleFlowNode[] = []
-const saveSimpleFlowModel = async (simpleModelNode: SimpleFlowNode) => {
-  if (!simpleModelNode) {
-    message.error('模型数据为空')
-    return
-  }
-  try {
-    loading.value = true
-    const data = {
-      id: props.modelId,
-      simpleModel: simpleModelNode
+
+// 添加更新模型的方法
+const updateModel = () => {
+  if (!processNodeTree.value) {
+    processNodeTree.value = {
+      name: '发起人',
+      type: NodeType.START_USER_NODE,
+      id: NodeId.START_USER_NODE_ID,
+      childNode: {
+        id: NodeId.END_EVENT_NODE_ID,
+        name: '结束',
+        type: NodeType.END_EVENT_NODE
+      }
     }
-    const result = await updateBpmSimpleModel(data)
-    if (result) {
-      message.success('修改成功')
-      emits('success')
-    } else {
-      message.alert('修改失败')
-    }
-  } finally {
-    loading.value = false
+    // 初始化时也触发一次保存
+    saveSimpleFlowModel(processNodeTree.value)
   }
 }
+
+const saveSimpleFlowModel = async (simpleModelNode: SimpleFlowNode) => {
+  if (!simpleModelNode) {
+    return
+  }
+
+  try {
+    processData.value = simpleModelNode
+    emits('success', simpleModelNode)
+  } catch (error) {
+    console.error('保存失败:', error)
+  }
+}
+
 // 校验节点设置。 暂时以 showText 为空 未节点错误配置
 const validateNode = (node: SimpleFlowNode | undefined, errorNodes: SimpleFlowNode[]) => {
   if (node) {
@@ -133,15 +198,17 @@ const validateNode = (node: SimpleFlowNode | undefined, errorNodes: SimpleFlowNo
 onMounted(async () => {
   try {
     loading.value = true
-    // 获取表单字段
-    const bpmnModel = await getModel(props.modelId)
-    if (bpmnModel) {
-      formType.value = bpmnModel.formType
-      if (formType.value === 10) {
-        const bpmnForm = (await getForm(bpmnModel.formId)) as unknown as FormVO
-        formFields.value = bpmnForm?.fields
-      }
-    }
+    // // 获取表单字段
+    // if (props.modelId) {
+    //   const bpmnModel = await getModel(props.modelId)
+    //   if (bpmnModel) {
+    //     formType.value = bpmnModel.formType
+    //     if (formType.value === BpmModelFormType.NORMAL && bpmnModel.formId) {
+    //       const bpmnForm = (await getForm(bpmnModel.formId)) as unknown as FormVO
+    //       formFields.value = bpmnForm?.fields
+    //     }
+    //   }
+    // }
     // 获得角色列表
     roleOptions.value = await RoleApi.getSimpleRoleList()
     // 获得岗位列表
@@ -150,30 +217,21 @@ onMounted(async () => {
     userOptions.value = await UserApi.getSimpleUserList()
     // 获得部门列表
     deptOptions.value = await DeptApi.getSimpleDeptList()
-
     deptTreeOptions.value = handleTree(deptOptions.value as DeptApi.DeptVO[], 'id')
     // 获取用户组列表
     userGroupOptions.value = await UserGroupApi.getUserGroupSimpleList()
-
-    //获取 SIMPLE 设计器模型
-    const result = await getBpmSimpleModel(props.modelId)
-    if (result) {
-      processNodeTree.value = result
+    // 加载流程数据
+    if (processData.value) {
+      processNodeTree.value = processData?.value
     } else {
-      // 初始值
-      processNodeTree.value = {
-        name: '发起人',
-        type: NodeType.START_USER_NODE,
-        id: NodeId.START_USER_NODE_ID,
-        childNode: {
-          id: NodeId.END_EVENT_NODE_ID,
-          name: '结束',
-          type: NodeType.END_EVENT_NODE
-        }
-      }
+      updateModel()
     }
   } finally {
     loading.value = false
   }
 })
+
+const simpleProcessModelRef = ref()
+
+defineExpose({})
 </script>

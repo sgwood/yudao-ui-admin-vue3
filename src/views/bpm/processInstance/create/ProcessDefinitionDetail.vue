@@ -8,7 +8,7 @@
         <!-- 中间主要内容 tab 栏 -->
         <el-tabs v-model="activeTab">
           <!-- 表单信息 -->
-          <el-tab-pane label="表单填写" name="form" >
+          <el-tab-pane label="表单填写" name="form">
             <div class="form-scroll-area" v-loading="processInstanceStartLoading">
               <el-scrollbar>
                 <el-row>
@@ -74,8 +74,12 @@
 </template>
 <script lang="ts" setup>
 import { decodeFields, setConfAndFields2 } from '@/utils/formCreate'
-import { BpmModelType } from '@/utils/constants'
-import { CandidateStrategy } from '@/components/SimpleProcessDesignerV2/src/consts'
+import { BpmModelType, BpmModelFormType } from '@/utils/constants'
+import {
+  CandidateStrategy,
+  NodeId,
+  FieldPermissionType
+} from '@/components/SimpleProcessDesignerV2/src/consts'
 import ProcessInstanceBpmnViewer from '../detail/ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceSimpleViewer from '../detail/ProcessInstanceSimpleViewer.vue'
 import ProcessInstanceTimeline from '../detail/ProcessInstanceTimeline.vue'
@@ -84,6 +88,7 @@ import { useTagsViewStore } from '@/store/modules/tagsView'
 import * as ProcessInstanceApi from '@/api/bpm/processInstance'
 import * as DefinitionApi from '@/api/bpm/definition'
 import { ApprovalNodeInfo } from '@/api/bpm/processInstance'
+import formCreate from '@form-create/element-ui'
 
 defineOptions({ name: 'ProcessDefinitionDetail' })
 const props = defineProps<{
@@ -104,6 +109,7 @@ const fApi = ref<ApiAttrs>()
 // 指定审批人
 const startUserSelectTasks: any = ref([]) // 发起人需要选择审批人或抄送人的任务列表
 const startUserSelectAssignees = ref({}) // 发起人选择审批人的数据
+const tempStartUserSelectAssignees = ref({}) // 历史发起人选择审批人的数据，用于每次表单变更时，临时保存
 const bpmnXML: any = ref(null) // BPMN 数据
 const simpleJson = ref<string | undefined>() // Simple 设计器数据 json 格式
 
@@ -117,22 +123,28 @@ const initProcessInfo = async (row: any, formVariables?: any) => {
   startUserSelectAssignees.value = {}
 
   // 情况一：流程表单
-  if (row.formType == 10) {
+  if (row.formType == BpmModelFormType.NORMAL) {
     // 设置表单
     // 注意：需要从 formVariables 中，移除不在 row.formFields 的值。
     // 原因是：后端返回的 formVariables 里面，会有一些非表单的信息。例如说，某个流程节点的审批人。
     //        这样，就可能导致一个流程被审批不通过后，重新发起时，会直接后端报错！！！
-    const allowedFields = decodeFields(row.formFields).map((fieldObj: any) => fieldObj.field)
+    const formApi = formCreate.create(decodeFields(row.formFields))
+    const allowedFields = formApi.fields()
     for (const key in formVariables) {
       if (!allowedFields.includes(key)) {
         delete formVariables[key]
       }
     }
     setConfAndFields2(detailForm, row.formConf, row.formFields, formVariables)
+
     await nextTick()
     fApi.value?.btn.show(false) // 隐藏提交按钮
-    // 获取流程审批信息
-    await getApprovalDetail(row)
+
+    // 获取流程审批信息,当再次发起时，流程审批节点要根据原始表单参数预测出来
+    await getApprovalDetail({
+      id: row.id,
+      processVariablesStr: JSON.stringify(formVariables)
+    })
 
     // 加载流程图
     const processDefinitionDetail = await DefinitionApi.getProcessDefinition(row.id)
@@ -149,28 +161,105 @@ const initProcessInfo = async (row: any, formVariables?: any) => {
   }
 }
 
+/** 预测流程节点会因为输入的参数值而产生新的预测结果值，所以需重新预测一次 */
+watch(
+  detailForm.value,
+  (newValue) => {
+    if (newValue && Object.keys(newValue.value).length > 0) {
+      // 记录之前的节点审批人
+      tempStartUserSelectAssignees.value = startUserSelectAssignees.value
+      startUserSelectAssignees.value = {}
+      // 加载最新的审批详情
+      getApprovalDetail({
+        id: props.selectProcessDefinition.id,
+        processVariablesStr: JSON.stringify(newValue.value) // 解决 GET 无法传递对象的问题，后端 String 再转 JSON
+      })
+    }
+  },
+  {
+    immediate: true
+  }
+)
+
 /** 获取审批详情 */
 const getApprovalDetail = async (row: any) => {
   try {
-    const data = await ProcessInstanceApi.getApprovalDetail({ processDefinitionId: row.id })
+    // TODO 获取审批详情，设置 activityId 为发起人节点（为了获取字段权限。暂时只对 Simple 设计器有效）；@jason：这里可以去掉 activityId 么？
+    const data = await ProcessInstanceApi.getApprovalDetail({
+      processDefinitionId: row.id,
+      activityId: NodeId.START_USER_NODE_ID,
+      processVariablesStr: row.processVariablesStr // 解决 GET 无法传递对象的问题，后端 String 再转 JSON
+    })
+
     if (!data) {
       message.error('查询不到审批详情信息！')
       return
     }
+    // 获取审批节点，显示 Timeline 的数据
+    activityNodes.value = data.activityNodes
 
     // 获取发起人自选的任务
     startUserSelectTasks.value = data.activityNodes?.filter(
       (node: ApprovalNodeInfo) => CandidateStrategy.START_USER_SELECT === node.candidateStrategy
     )
+    // 恢复之前的选择审批人
     if (startUserSelectTasks.value?.length > 0) {
       for (const node of startUserSelectTasks.value) {
-        startUserSelectAssignees.value[node.id] = []
+        if (
+          tempStartUserSelectAssignees.value[node.id] &&
+          tempStartUserSelectAssignees.value[node.id].length > 0
+        ) {
+          startUserSelectAssignees.value[node.id] = tempStartUserSelectAssignees.value[node.id]
+        } else {
+          startUserSelectAssignees.value[node.id] = []
+        }
       }
     }
 
-    // 获取审批节点，显示 Timeline 的数据
-    activityNodes.value = data.activityNodes
+    // 获取表单字段权限
+    const formFieldsPermission = data.formFieldsPermission
+    // 设置表单字段权限
+    if (formFieldsPermission) {
+      Object.keys(formFieldsPermission).forEach((item) => {
+        setFieldPermission(item, formFieldsPermission[item])
+      })
+    }
   } finally {
+  }
+}
+
+/**
+ * 设置表单权限
+ */
+const setFieldPermission = (field: string, permission: string) => {
+  if (permission === FieldPermissionType.READ) {
+    // 1. 设置字段为只读
+    //@ts-ignore
+    fApi.value?.disabled(true, field)
+    // 2. 只读字段， 去掉验证规则
+    //  fApi.value?.updateValidate(field, []); 这个方法貌似不起作用，
+    try {
+      //@ts-ignore
+      const rule = fApi.value?.getRule(field)
+      if (rule) {
+        // 必填验证设置为false
+        rule.$required = false
+        // 清空所有验证规则
+        if (rule.validate) {
+          rule.validate = []
+        }
+      }
+    } catch (error) {
+      console.warn('修改字段验证规则失败:', error)
+    }
+  }
+  if (permission === FieldPermissionType.WRITE) {
+    //@ts-ignore
+    fApi.value?.disabled(false, field)
+  }
+  if (permission === FieldPermissionType.NONE) {
+    //@ts-ignore
+    fApi.value?.hidden(true, field)
   }
 }
 
@@ -179,8 +268,15 @@ const submitForm = async () => {
   if (!fApi.value || !props.selectProcessDefinition) {
     return
   }
-  // 流程表单校验
-  await fApi.value.validate()
+  
+  try {
+    // 流程表单校验
+    await fApi.value.validate()
+  } catch (error) {
+    // 如果验证失败，检查是否是只读字段的验证错误
+    console.warn('表单验证失败:', error)
+    return
+  }
   // 如果有指定审批人，需要校验
   if (startUserSelectTasks.value?.length > 0) {
     for (const userTask of startUserSelectTasks.value) {

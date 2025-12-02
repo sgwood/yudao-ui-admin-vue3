@@ -113,18 +113,21 @@
 
 // 节点连线气泡卡片样式
 .handler-item-wrapper {
+  width: 320px;
   display: flex;
+  flex-wrap: wrap;
   cursor: pointer;
 
   .handler-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 12px;
   }
 
   .handler-item-icon {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     background: #fff;
     border: 1px solid #e2e2e2;
     border-radius: 50%;
@@ -138,13 +141,14 @@
 
     .icon-size {
       font-size: 25px;
-      line-height: 60px;
+      line-height: 50px;
     }
   }
 
   .approve {
     color: #ff943e;
   }
+
   .copy {
     color: #3296fa;
   }
@@ -161,6 +165,30 @@
     color: #345da2;
   }
 
+  .delay {
+    color: #e47470;
+  }
+
+  .trigger {
+    color: #3373d2;
+  }
+
+  .router {
+    color: #ca3a31
+  }
+
+  .transactor {
+    color: #330099;
+  }
+
+  .child-process {
+    color: #996633;
+  }
+
+  .async-child-process {
+    color: #006666;
+  }
+
   .handler-item-text {
     margin-top: 4px;
     width: 80px;
@@ -173,15 +201,17 @@
   height: 100%;
   padding-top: 32px;
   background-color: #fafafa;
+  overflow-x: auto;
+  width: 100%;
+
   .simple-process-model {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     transform-origin: 50% 0 0;
-    overflow: auto;
+    min-width: fit-content;
     transform: scale(1);
-    transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
     background: url(@/assets/svgs/bpm/simple-process-bg.svg) 0 0 repeat;
     // 节点容器 定义节点宽度
     .node-container {
@@ -262,6 +292,30 @@
 
           &.start-user {
             color: #676565;
+          }
+
+          &.delay-node {
+            color: #e47470;
+          }
+
+          &.trigger-node {
+            color: #3373d2;
+          }
+
+          &.router-node {
+            color: #ca3a31
+          }
+
+          &.transactor-task {
+            color: #330099;
+          }
+
+          &.child-process {
+            color: #996633;
+          }
+
+          &.async-child-process {
+            color: #006666;
           }
         }
 
@@ -473,6 +527,7 @@
       .branch-node-container {
         position: relative;
         display: flex;
+        min-width: fit-content;
 
         &::before {
           position: absolute;
@@ -548,6 +603,7 @@
           background: transparent;
           border-top: 2px solid #dedede;
           border-bottom: 2px solid #dedede;
+          flex-shrink: 0;
 
           &::before {
             position: absolute;
@@ -706,45 +762,64 @@
 
 // iconfont 样式
 @font-face {
-  font-family: 'iconfont'; /* Project id 4495938 */
-  src:
-    url('iconfont.woff2?t=1724339470412') format('woff2'),
-    url('iconfont.woff?t=1724339470412') format('woff'),
-    url('iconfont.ttf?t=1724339470412') format('truetype');
+  font-family: "iconfont"; /* Project id 4495938 */
+  src: url('iconfont.woff2?t=1737639517142') format('woff2'),
+       url('iconfont.woff?t=1737639517142') format('woff'),
+       url('iconfont.ttf?t=1737639517142') format('truetype');
 }
 
 .iconfont {
-  font-family: 'iconfont' !important;
+  font-family: "iconfont" !important;
   font-size: 16px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-trigger:before {
+  content: "\e6d3";
+}
+
+.icon-router:before {
+  content: "\e6b2";
+}
+
+.icon-delay:before {
+  content: "\e600";
+}
+
 .icon-start-user:before {
-  content: '\e679';
+  content: "\e679";
 }
 
 .icon-inclusive:before {
-  content: '\e602';
+  content: "\e602";
 }
 
 .icon-copy:before {
-  content: '\e7eb';
+  content: "\e7eb";
 }
 
-.icon-handle:before {
-  content: '\e61c';
+.icon-transactor:before {
+  content: "\e61c";
 }
 
 .icon-exclusive:before {
-  content: '\e717';
+  content: "\e717";
 }
 
 .icon-approve:before {
-  content: '\e715';
+  content: "\e715";
 }
 
 .icon-parallel:before {
-  content: '\e688';
+  content: "\e688";
+}
+
+.icon-async-child-process:before {
+  content: "\e6f2";
+}
+
+.icon-child-process:before {
+  content: "\e6c1";
 }

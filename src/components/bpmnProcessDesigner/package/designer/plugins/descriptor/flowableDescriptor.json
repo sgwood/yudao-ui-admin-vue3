@@ -1014,6 +1014,16 @@
           "name": "fields",
           "type": "Field",
           "isMany": true
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "isAttr": true
+        },
+        {
+          "name": "eventDefinitions",
+          "type": "bpmn:TimerEventDefinition",
+          "isMany": true
         }
       ]
     },
@@ -1435,6 +1445,45 @@
         {
           "name": "value",
           "type": "String",
+          "isBody": true
+        }
+      ]
+    },
+    {
+      "name": "SignEnable",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["bpmn:UserTask"]
+      },
+      "properties": [
+        {
+          "name": "value",
+          "type": "Boolean",
+          "isBody": true
+        }
+      ]
+    },
+    {
+      "name": "SkipExpression",
+      "extends": ["bpmn:UserTask"],
+      "properties": [
+        {
+          "name": "skipExpression",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "ReasonRequire",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["bpmn:UserTask"]
+      },
+      "properties": [
+        {
+          "name": "value",
+          "type": "Boolean",
           "isBody": true
         }
       ]

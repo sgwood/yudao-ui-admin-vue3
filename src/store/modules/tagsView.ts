@@ -4,16 +4,19 @@ import { getRawRoute } from '@/utils/routerHelper'
 import { defineStore } from 'pinia'
 import { store } from '../index'
 import { findIndex } from '@/utils'
+import { useUserStoreWithOut } from './user'
 
 export interface TagsViewState {
   visitedViews: RouteLocationNormalizedLoaded[]
   cachedViews: Set<string>
+  selectedTag?: RouteLocationNormalizedLoaded
 }
 
 export const useTagsViewStore = defineStore('tagsView', {
   state: (): TagsViewState => ({
     visitedViews: [],
-    cachedViews: new Set()
+    cachedViews: new Set(),
+    selectedTag: undefined
   }),
   getters: {
     getVisitedViews(): RouteLocationNormalizedLoaded[] {
@@ -21,6 +24,9 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     getCachedViews(): string[] {
       return Array.from(this.cachedViews)
+    },
+    getSelectedTag(): RouteLocationNormalizedLoaded | undefined {
+      return this.selectedTag
     }
   },
   actions: {
@@ -87,6 +93,12 @@ export const useTagsViewStore = defineStore('tagsView', {
     delCachedView() {
       const route = router.currentRoute.value
       const index = findIndex<string>(this.getCachedViews, (v) => v === route.name)
+      // 需要注释，解决“标签页刷新无效”。相关案例：https://github.com/yudaocode/yudao-ui-admin-vue3/issues/180
+      // for (const v of this.visitedViews) {
+      //   if (v.name === route.name) {
+      //     return
+      //   }
+      // }
       if (index > -1) {
         this.cachedViews.delete(this.getCachedViews[index])
       }
@@ -98,8 +110,12 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 删除所有tag
     delAllVisitedViews() {
+      const userStore = useUserStoreWithOut()
+
       // const affixTags = this.visitedViews.filter((tag) => tag.meta.affix)
-      this.visitedViews = []
+      this.visitedViews = userStore.getUser
+        ? this.visitedViews.filter((tag) => tag?.meta?.affix)
+        : []
     },
     // 删除其他
     delOthersViews(view: RouteLocationNormalizedLoaded) {
@@ -142,6 +158,18 @@ export const useTagsViewStore = defineStore('tagsView', {
       for (let v of this.visitedViews) {
         if (v.fullPath === view.fullPath) {
           v = Object.assign(v, view)
+          break
+        }
+      }
+    },
+    // 设置当前选中的 tag
+    setSelectedTag(tag: RouteLocationNormalizedLoaded) {
+      this.selectedTag = tag
+    },
+    setTitle(title: string, path?: string) {
+      for (const v of this.visitedViews) {
+        if (v.path === (path ?? this.selectedTag?.path)) {
+          v.meta.title = title
           break
         }
       }
