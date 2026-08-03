@@ -210,6 +210,9 @@
                   <el-dropdown-item command="handleDefinitionList" v-if="hasPermiPdQuery">
                     历史
                   </el-dropdown-item>
+                  <el-dropdown-item command="handleExport" v-if="hasPermiExport">
+                    导出
+                  </el-dropdown-item>
                   <el-dropdown-item
                     command="handleReport"
                     v-if="
@@ -284,11 +287,12 @@ import * as FormApi from '@/api/bpm/form'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import { BpmModelFormType } from '@/utils/constants'
 import { checkPermi } from '@/utils/permission'
-import { useUserStoreWithOut } from '@/store/modules/user'
+import { getCurrentUserId } from '@/utils/auth'
 import { useAppStore } from '@/store/modules/app'
 import { cloneDeep, isEqual } from 'lodash-es'
 import { useDebounceFn } from '@vueuse/core'
 import { subString } from '@/utils/index'
+import download from '@/utils/download'
 
 defineOptions({ name: 'BpmModel' })
 
@@ -333,7 +337,6 @@ const emit = defineEmits(['success'])
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 const { push } = useRouter() // 路由
-const userStore = useUserStoreWithOut() // 用户信息缓存
 const isDark = computed(() => useAppStore().getIsDark) // 是否黑暗模式
 const router = useRouter() // 路由
 
@@ -362,8 +365,16 @@ const hasPermiDelete = computed(() => {
 const hasPermiDeploy = computed(() => {
   return checkPermi(['bpm:model:deploy'])
 })
+const hasPermiExport = computed(() => {
+  return checkPermi(['bpm:model:export'])
+})
 const hasPermiMore = computed(() => {
-  return checkPermi(['bpm:process-definition:query', 'bpm:model:update', 'bpm:model:delete'])
+  return checkPermi([
+    'bpm:process-definition:query',
+    'bpm:model:update',
+    'bpm:model:delete',
+    'bpm:model:export'
+  ])
 })
 const hasPermiPdQuery = computed(() => {
   return checkPermi(['bpm:process-definition:query'])
@@ -377,6 +388,9 @@ const handleModelCommand = (command: string, row: any) => {
       break
     case 'handleDelete':
       handleDelete(row)
+      break
+    case 'handleExport':
+      handleExport(row)
       break
     case 'handleChangeState':
       handleChangeState(row)
@@ -396,6 +410,12 @@ const handleModelCommand = (command: string, row: any) => {
     default:
       break
   }
+}
+
+const handleExport = async (row: any) => {
+  const data = await ModelApi.exportModel(row.id)
+  download.json(new Blob([JSON.stringify(data, null, 2)]), `${row.key || row.name || 'model'}.json`)
+  message.success('导出成功')
 }
 
 /** '分类'操作按钮 */
@@ -501,7 +521,7 @@ const handleFormDetail = async (row: any) => {
 
 /** 判断是否可以操作 */
 const isManagerUser = (row: any) => {
-  const userId = userStore.getUser.id
+  const userId = getCurrentUserId()
   return row.managerUserIds && row.managerUserIds.includes(userId)
 }
 
@@ -537,7 +557,6 @@ const handleModelSortCancel = () => {
 }
 
 /** 创建拖拽实例 */
-const tableRef = ref()
 const initSort = useDebounceFn(() => {
   const table = document.querySelector(`.${props.categoryInfo.name} .el-table__body-wrapper tbody`)
   if (!table) return

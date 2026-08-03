@@ -44,7 +44,7 @@
           <el-tab-pane label="审批详情" name="form">
             <div class="form-scroll-area">
               <el-scrollbar>
-                <el-row>
+                <el-row :gutter="40">
                   <el-col :span="17" class="!flex !flex-col formCol">
                     <!-- 表单信息 -->
                     <div
@@ -52,14 +52,14 @@
                       class="form-box flex flex-col mb-30px flex-1"
                     >
                       <!-- 情况一：流程表单 -->
-                      <el-col v-if="processDefinition?.formType === BpmModelFormType.NORMAL">
+                      <div v-if="processDefinition?.formType === BpmModelFormType.NORMAL">
                         <form-create
                           v-model="detailForm.value"
                           v-model:api="fApi"
                           :option="detailForm.option"
                           :rule="detailForm.rule"
                         />
-                      </el-col>
+                      </div>
                       <!-- 情况二：业务表单 -->
                       <div v-if="processDefinition?.formType === BpmModelFormType.CUSTOM">
                         <BusinessFormComponent :id="processInstance.businessKey" />
@@ -104,10 +104,16 @@
             </div>
           </el-tab-pane>
 
-          <!-- 流转评论 TODO 待开发 -->
-          <el-tab-pane label="流转评论" name="comment" v-if="false">
+          <!-- 流程评论 -->
+          <el-tab-pane label="流程评论" name="comment">
             <div class="form-scroll-area">
-              <el-scrollbar> 流转评论 </el-scrollbar>
+              <el-scrollbar>
+                <ProcessInstanceCommentList
+                  ref="commentListRef"
+                  :loading="processInstanceLoading"
+                  :id="id"
+                />
+              </el-scrollbar>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -138,12 +144,13 @@ import { DICT_TYPE } from '@/utils/dict'
 import { BpmModelType, BpmModelFormType } from '@/utils/constants'
 import { setConfAndFields2 } from '@/utils/formCreate'
 import { registerComponent } from '@/utils/routerHelper'
-import type { ApiAttrs } from '@form-create/element-ui/types/config'
+import type { Api as FormCreateApi } from '@form-create/element-ui'
 import * as ProcessInstanceApi from '@/api/bpm/processInstance'
 import * as UserApi from '@/api/system/user'
 import ProcessInstanceBpmnViewer from './ProcessInstanceBpmnViewer.vue'
 import ProcessInstanceSimpleViewer from './ProcessInstanceSimpleViewer.vue'
 import ProcessInstanceTaskList from './ProcessInstanceTaskList.vue'
+import ProcessInstanceCommentList from './ProcessInstanceCommentList.vue'
 import ProcessInstanceOperationButton from './ProcessInstanceOperationButton.vue'
 import ProcessInstanceTimeline from './ProcessInstanceTimeline.vue'
 import { FieldPermissionType } from '@/components/SimpleProcessDesignerV2/src/consts'
@@ -166,6 +173,7 @@ const processInstance = ref<any>({}) // 流程实例
 const processDefinition = ref<any>({}) // 流程定义
 const processModelView = ref<any>({}) // 流程模型视图
 const operationButtonRef = ref() // 操作按钮组件 ref
+const commentListRef = ref() // 评论列表组件 ref
 const auditIconsMap = {
   [TaskStatusEnum.RUNNING]: runningSvg,
   [TaskStatusEnum.APPROVE]: approveSvg,
@@ -174,7 +182,7 @@ const auditIconsMap = {
 }
 
 // ========== 申请信息 ==========
-const fApi = ref<ApiAttrs>() //
+const fApi = ref<FormCreateApi>() //
 const detailForm = ref({
   rule: [],
   option: {},
@@ -235,7 +243,6 @@ const getApprovalDetail = async () => {
       nextTick().then(() => {
         fApi.value?.btn.show(false)
         fApi.value?.resetBtn.show(false)
-        //@ts-ignore
         fApi.value?.disabled(true)
         // 设置表单字段权限
         if (formFieldsPermission) {
@@ -276,17 +283,14 @@ const getProcessModelView = async () => {
 /** 设置表单权限 */
 const setFieldPermission = (field: string, permission: string) => {
   if (permission === FieldPermissionType.READ) {
-    //@ts-ignore
     fApi.value?.disabled(true, field)
   }
   if (permission === FieldPermissionType.WRITE) {
-    //@ts-ignore
     fApi.value?.disabled(false, field)
     // 加入可以编辑的字段
     writableFields.push(field)
   }
   if (permission === FieldPermissionType.NONE) {
-    //@ts-ignore
     fApi.value?.hidden(true, field)
   }
 }
@@ -295,6 +299,8 @@ const setFieldPermission = (field: string, permission: string) => {
 const refresh = () => {
   // 重新获取详情
   getDetail()
+  // 重新获取评论
+  commentListRef.value?.getList()
 }
 
 /** 处理打印 */

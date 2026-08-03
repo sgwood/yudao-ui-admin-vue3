@@ -87,7 +87,7 @@
 
 * 通用模块（必选）：系统功能、基础设施
 * 通用模块（可选）：工作流程、支付系统、数据报表、会员中心
-* 业务系统（按需）：ERP 系统、CRM 系统、商城系统、微信公众号、AI 大模型
+* 业务系统（按需）：Mall 电子商城、OA 办公自动化、ERP 企业资源计划系统、WMS 仓库管理系统、CRM 客户关系管理、CMS 内容管理系统、MES 执行制造系统、AI 大模型平台、IoT 物联网系统、IM 即时通讯系统、Mobile 手机移动端、Report 数据大屏
 
 ### 系统功能
 
@@ -222,17 +222,43 @@
 
 ![功能图](/.image/common/mall-preview.png)
 
+### 会员中心
+
+|     | 功能   | 描述                               |
+|-----|------|----------------------------------|
+| 🚀  | 会员管理 | 会员是 C 端的消费者，该功能用于会员的搜索与管理        |
+| 🚀  | 会员标签 | 对会员的标签进行创建、查询、修改、删除等操作           |
+| 🚀  | 会员等级 | 对会员的等级、成长值进行管理，可用于订单折扣等会员权益      |
+| 🚀  | 会员分组 | 对会员进行分组，用于用户画像、内容推送等运营手段         |
+| 🚀  | 积分签到 | 回馈给签到、消费等行为的积分，会员可订单抵现、积分兑换等途径消耗 |
+
 ### ERP 系统
 
 演示地址：<https://doc.iocoder.cn/erp-preview/>
 
 ![功能图](/.image/common/erp-feature.png)
 
+### WMS 系统
+
+演示地址：<https://doc.iocoder.cn/wms-preview/>
+
+![功能图](/.image/common/wms-feature.png)
+
+![预览图](/.image/common/wms-preview.png)
+
 ### CRM 系统
 
 演示地址：<https://doc.iocoder.cn/crm-preview/>
 
 ![功能图](/.image/common/crm-feature.png)
+
+### MES 系统
+
+演示地址：<https://doc.iocoder.cn/mes-preview/>
+
+![功能图](/.image/common/mes-feature.png)
+
+![功能图](/.image/common/mes-preview.png)
 
 ### AI 大模型
 
@@ -241,6 +267,35 @@
 ![功能图](/.image/common/ai-feature.png)
 
 ![功能图](/.image/common/ai-preview.gif)
+
+### MES 系统
+
+演示地址：<https://doc.iocoder.cn/mes-preview/>
+
+![功能图](/.image/common/mes-feature.png)
+
+![预览图](/.image/common/mes-preview.png)
+
+### IoT 物联网
+
+演示地址：<https://doc.iocoder.cn/iot/build>
+
+![功能图](/.image/common/iot-feature.png)
+
+![预览图](/.image/common/iot-preview.png)
+
+### IM 即时通讯
+
+演示地址（Vue3 + Element Plus）：<http://dashboard-vue3.yudao.iocoder.cn>
+
+使用文档：<https://doc.iocoder.cn/im-preview/>
+
+
+![功能图](/.image/common/im-feature.png)
+
+| 聊天界面 | 聊天管理 |
+| --- | --- |
+| ![聊天界面](/.image/common/im-preview-home.png) | ![聊天管理](/.image/common/im-preview-manager.png) |
 
 ## 🐷 演示图
 

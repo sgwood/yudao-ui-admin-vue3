@@ -79,12 +79,12 @@
       <el-table-column label="评论编号" align="center" prop="id" min-width="80" />
       <el-table-column label="商品信息" align="center" min-width="400">
         <template #default="scope">
-          <div class="flex row items-center gap-x-4px">
+          <div class="row flex items-center gap-x-4px">
             <el-image
               v-if="scope.row.skuPicUrl"
               :src="scope.row.skuPicUrl"
               :preview-src-list="[scope.row.skuPicUrl]"
-              class="w-40px h-40px shrink-0"
+              class="h-40px w-40px shrink-0"
               preview-teleported
             />
             <div>{{ scope.row.spuName }}</div>
@@ -110,8 +110,8 @@
               :key="index"
               :src="picUrl"
               :preview-src-list="scope.row.picUrls"
-              :initial-index="index"
-              class="w-40px h-40px"
+              :initial-index="Number(index)"
+              class="h-40px w-40px"
               preview-teleported
             />
           </div>
@@ -179,7 +179,6 @@ import ReplyForm from './ReplyForm.vue'
 defineOptions({ name: 'ProductComment' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
 
 const loading = ref(true) // 列表的加载中
 const total = ref(0) // 列表的总页数
